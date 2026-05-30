@@ -1,1 +1,139 @@
+
+
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;500&display=swap");
 @import "tailwindcss";
+
+
+@theme {
+  /* ── Fonts ── */
+  --font-display: "Syne", sans-serif;
+  --font-body:    "DM Sans", sans-serif;
+  --font-mono:    "JetBrains Mono", monospace;
+
+
+
+  /* Canvas — page background */
+  --color-canvas:          #080c14;   /* very dark navy-black */
+  --color-canvas-light:    #f1f5f9;   /* slate-100 for light mode */
+
+  /* Surfaces — cards, sheets, modals */
+  --color-surface:         #0d1424;   /* dark navy */
+  --color-surface-2:       #111827;   /* slightly lighter for nested cards */
+  --color-surface-light:   #ffffff;
+  --color-surface-2-light: #f8fafc;
+
+  /* Borders */
+  --color-border:          #1e2d45;   /* subtle blue-tinted border */
+  --color-border-light:    #e2e8f0;
+
+  /* Primary — blue */
+  --color-primary:         #3b82f6;   /* blue-500 */
+  --color-primary-hover:   #2563eb;   /* blue-600 */
+  --color-primary-subtle:  #1e3a5f;   /* dark blue tint for backgrounds */
+  --color-primary-muted:   #1d3461;
+
+  /* Accent — amber */
+  --color-accent:          #f59e0b;   /* amber-500 */
+  --color-accent-hover:    #d97706;
+  --color-accent-subtle:   #2d1f04;
+
+  /* Text */
+  --color-text-primary:    #f0f4ff;   /* blue-tinted near-white */
+  --color-text-secondary:  #8899bb;   /* muted blue-gray */
+  --color-text-muted:      #3d5070;   /* very muted */
+  --color-text-dark:       #0f172a;   /* for light mode text */
+
+  /* Semantic */
+  --color-success:         #22c55e;
+  --color-error:           #ef4444;
+  --color-warning:         #f59e0b;
+
+  /* ── Spacing extras ── */
+  --spacing-18: 4.5rem;
+  --spacing-22: 5.5rem;
+
+  /* ── Border radius ── */
+  --radius-2xl:  1rem;
+  --radius-3xl:  1.25rem;
+  --radius-4xl:  2rem;
+
+  /* ── Shadows ── */
+  --shadow-card:         0 1px 3px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.3);
+  --shadow-glow-blue:    0 0 24px rgba(59,130,246,0.20);
+  --shadow-glow-amber:   0 0 24px rgba(245,158,11,0.20);
+  --shadow-float:        0 8px 32px rgba(0,0,0,0.4);
+}
+
+/* ── Base styles ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-family: var(--font-body);
+  background-color: var(--color-canvas);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Prevent layout shift from scrollbar */
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  /* Mobile: prevent rubber-band scroll on the body itself */
+  overscroll-behavior: none;
+}
+
+#root {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Scrollbar (desktop) ── */
+::-webkit-scrollbar        { width: 4px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--color-border); border-radius: 99px; }
+
+/* ── Selection ── */
+::selection {
+  background: rgba(59, 130, 246, 0.25);
+  color: var(--color-text-primary);
+}
+
+/* ── Light mode overrides ── */
+@media (prefers-color-scheme: light) {
+  html:not(.dark) {
+    --color-canvas:   var(--color-canvas-light);
+    --color-surface:  var(--color-surface-light);
+    --color-surface-2: var(--color-surface-2-light);
+    --color-border:   var(--color-border-light);
+    --color-text-primary:   var(--color-text-dark);
+    --color-text-secondary: #475569;
+    --color-text-muted:     #94a3b8;
+  }
+}
+
+/* Dark class override (AppContext toggles this) */
+html.dark {
+  --color-canvas:   #080c14;
+  --color-surface:  #0d1424;
+  --color-surface-2: #111827;
+  --color-border:   #1e2d45;
+  --color-text-primary:   #f0f4ff;
+  --color-text-secondary: #8899bb;
+  --color-text-muted:     #3d5070;
+}
+
+html.light {
+  --color-canvas:   #f1f5f9;
+  --color-surface:  #ffffff;
+  --color-surface-2: #f8fafc;
+  --color-border:   #e2e8f0;
+  --color-text-primary:   #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-muted:     #94a3b8;
+}
