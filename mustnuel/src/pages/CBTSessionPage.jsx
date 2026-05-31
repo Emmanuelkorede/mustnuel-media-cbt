@@ -97,7 +97,7 @@ export default function CBTSessionPage() {
     const payload = await submitSession();
     setIsSubmitting(false);
     setIsSubmitOpen(false);
-    navigate('/analytics', { state: { result: payload } });
+    navigate('/result', { state: { result: payload } });
   };
 
   const generatedStatusMap = useMemo(() => {

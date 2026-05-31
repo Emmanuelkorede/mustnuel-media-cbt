@@ -12,6 +12,7 @@ import HomePage from './pages/HomePage';
 import PracticeHubPage from './pages/PracticeHubPage';
 import UpgradeModal from './components/ui/UpgradeModal';
 import CBTSessionPage from './pages/CBTSessionPage';
+import ResultPage from './pages/ResultPage';
 
 function ComingSoon({ label }) {
   return (
@@ -93,6 +94,7 @@ export default function App() {
         <Route path="/home" element={<HomePage onNavigate={onNavigate} />} />
         <Route path="/practice" element={<PracticeHubPage />} />
         <Route path="/cbt-session" element={<CBTSessionPage />} />
+        <Route path="/result" element={<ResultPage />} />
         <Route path="/analytics" element={<ComingSoon label="Analytics" />} />
         <Route path="/profile" element={<ComingSoon label="Profile" />} />
         <Route path="/notifications" element={<ComingSoon label="Notifications" />} />

@@ -1,54 +1,36 @@
-// =============================================================================
-// src/pages/ResultPage.jsx
-// =============================================================================
-// Post-exam results screen.
-//
-// Two views toggled by a tab:
-//   1. Overview  — score ring, subject breakdown chart, key metrics
-//   2. Review    — question-by-question corrections with filter tabs
-//                  (All / Wrong / Skipped)
-//
-// Props:
-//   session     — the same useTestSession() instance (result is inside it)
-//   onNavigate  — routing handler
-// =============================================================================
-
-import { useState } from 'react';
-import Header           from '../components/navigation/Header';
+import { useState, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { useApp } from '../context/AppContext';
 import PerformanceChart from '../components/widgets/PerformanceChart';
 import QuestionRenderer from '../components/CBT/QuestionRenderer';
-import OptionButton     from '../components/CBT/OptionButton';
-import Button           from '../components/ui/Button';
-import Badge            from '../components/ui/Badge';
+import Button from '../components/ui/Button';
+import Badge from '../components/ui/Badge';
 
-// ---------------------------------------------------------------------------
-// Score ring — SVG circle progress
-// ---------------------------------------------------------------------------
+const OPTION_MAPPING = [
+  { letter: 'A', field: 'option_a' },
+  { letter: 'B', field: 'option_b' },
+  { letter: 'C', field: 'option_c' },
+  { letter: 'D', field: 'option_d' },
+];
+
 function ScoreRing({ percent }) {
-  const radius      = 54;
+  const radius = 54;
   const circumference = 2 * Math.PI * radius;
-  const filled      = (percent / 100) * circumference;
+  const filled = (percent / 100) * circumference;
 
-  const color = percent >= 70
-    ? 'var(--color-success)'
-    : percent >= 50
-    ? 'var(--color-accent)'
-    : 'var(--color-error)';
-
+  const color = percent >= 70 ? '#22c55e' : percent >= 50 ? '#f59e0b' : '#ef4444';
   const grade = percent >= 70 ? 'Pass' : percent >= 50 ? 'Fair' : 'Fail';
 
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="relative w-36 h-36">
         <svg width="144" height="144" viewBox="0 0 144 144" className="-rotate-90">
-          {/* Track */}
           <circle
             cx="72" cy="72" r={radius}
             fill="none"
-            stroke="var(--color-border)"
+            className="stroke-border"
             strokeWidth="10"
           />
-          {/* Progress */}
           <circle
             cx="72" cy="72" r={radius}
             fill="none"
@@ -61,7 +43,6 @@ function ScoreRing({ percent }) {
           />
         </svg>
 
-        {/* Centre text */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <p
             className="text-3xl font-black leading-none"
@@ -69,10 +50,7 @@ function ScoreRing({ percent }) {
           >
             {Math.round(percent)}%
           </p>
-          <p
-            className="text-xs font-semibold mt-0.5"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}
-          >
+          <p className="text-xs font-semibold text-text-muted mt-0.5" style={{ fontFamily: 'var(--font-body)' }}>
             {grade}
           </p>
         </div>
@@ -81,59 +59,54 @@ function ScoreRing({ percent }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Overview tab
-// ---------------------------------------------------------------------------
 function OverviewTab({ result }) {
-  const chartData = Object.entries(result.subject_breakdown ?? {}).map(
-    ([subject, stats]) => ({ subject, scorePercent: stats.scorePercent })
-  );
+  const chartData = useMemo(() => {
+    return Object.entries(result.subjectScores ?? {}).map(([subject, stats]) => ({
+      subject,
+      scorePercent: stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0,
+    }));
+  }, [result.subjectScores]);
 
-  const mins = Math.floor((result.time_taken_secs ?? 0) / 60);
-  const secs = (result.time_taken_secs ?? 0) % 60;
+  const mins = Math.floor((result.timeSpent ?? 0) / 60);
+  const secs = (result.timeSpent ?? 0) % 60;
+
+  const skippedCount = useMemo(() => {
+    return result.questions.filter((q) => !result.answers[q.id]).length;
+  }, [result.questions, result.answers]);
+
+  const wrongCount = result.totalQuestions - result.totalScore - skippedCount;
 
   const stats = [
-    { label: 'Correct',    value: result.correct_count },
-    { label: 'Wrong',      value: result.total_questions - result.correct_count - (result.reviewItems?.filter(r => r.isSkipped).length ?? 0) },
-    { label: 'Skipped',    value: result.reviewItems?.filter(r => r.isSkipped).length ?? 0 },
-    { label: 'Time taken', value: `${mins}m ${String(secs).padStart(2,'0')}s` },
+    { label: 'Correct',   value: result.totalScore },
+    { label: 'Wrong',     value: wrongCount },
+    { label: 'Skipped',   value: skippedCount },
+    { label: 'Time Spent', value: `${mins}m ${String(secs).padStart(2, '0')}s` },
   ];
+
+  const scorePercent = result.totalQuestions > 0 ? (result.totalScore / result.totalQuestions) * 100 : 0;
 
   return (
     <div className="flex flex-col gap-6 pb-8">
-      {/* Score ring */}
       <div className="flex justify-center py-4">
-        <ScoreRing percent={result.score_percent} />
+        <ScoreRing percent={scorePercent} />
       </div>
 
-      {/* Quick stats grid */}
       <div className="grid grid-cols-2 gap-3">
         {stats.map((s) => (
-          <div
-            key={s.label}
-            className="flex flex-col gap-1 px-4 py-4 rounded-2xl"
-            style={{
-              backgroundColor: 'var(--color-surface)',
-              border:          '1px solid var(--color-border)',
-            }}
-          >
+          <div key={s.label} className="flex flex-col gap-1 px-4 py-4 rounded-2xl bg-surface border border-border">
             <p
-              className="text-xl font-black leading-none"
-              style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}
+              className="text-xl font-black leading-none text-text-primary"
+              style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.02em' }}
             >
               {s.value}
             </p>
-            <p
-              className="text-xs"
-              style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}
-            >
+            <p className="text-xs text-text-muted" style={{ fontFamily: 'var(--font-body)' }}>
               {s.label}
             </p>
           </div>
         ))}
       </div>
 
-      {/* Subject breakdown chart */}
       {chartData.length > 0 && (
         <PerformanceChart data={chartData} title="Subject Breakdown" />
       )}
@@ -141,182 +114,177 @@ function OverviewTab({ result }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Review tab — corrections view
-// ---------------------------------------------------------------------------
 const REVIEW_FILTERS = ['All', 'Wrong', 'Skipped'];
 
-function ReviewTab({ reviewItems = [] }) {
-  const [filter,        setFilter]        = useState('All');
-  const [expandedIndex, setExpandedIndex] = useState(null);
+function ReviewTab({ questions = [], answers = {} }) {
+  const { isPremium = false, setIsUpgradeModalOpen } = useApp();
+  const [filter, setFilter] = useState('All');
+  const [expandedId, setExpandedId] = useState(null);
 
-  const filtered = reviewItems.filter((item) => {
-    if (filter === 'Wrong')   return !item.isCorrect && !item.isSkipped;
-    if (filter === 'Skipped') return item.isSkipped;
-    return true;
-  });
+  const filteredQuestions = useMemo(() => {
+    return questions.filter((q) => {
+      const userAnswer = answers[q.id];
+      const isSkipped = !userAnswer;
+      const isCorrect = userAnswer === q.correct_option;
+
+      if (filter === 'Wrong') return !isCorrect && !isSkipped;
+      if (filter === 'Skipped') return isSkipped;
+      return true;
+    });
+  }, [questions, answers, filter]);
+
+  const counts = useMemo(() => {
+    let wrong = 0;
+    let skipped = 0;
+    questions.forEach((q) => {
+      const ans = answers[q.id];
+      if (!ans) skipped++;
+      else if (ans !== q.correct_option) wrong++;
+    });
+    return { All: questions.length, Wrong: wrong, Skipped: skipped };
+  }, [questions, answers]);
 
   return (
     <div className="flex flex-col gap-4 pb-8">
-      {/* Filter tabs */}
+      {/* Filter Tabs */}
       <div className="flex gap-2">
         {REVIEW_FILTERS.map((f) => {
           const active = filter === f;
-          const count  = reviewItems.filter((item) => {
-            if (f === 'Wrong')   return !item.isCorrect && !item.isSkipped;
-            if (f === 'Skipped') return item.isSkipped;
-            return true;
-          }).length;
-
           return (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors"
-              style={{
-                fontFamily:      'var(--font-body)',
-                backgroundColor: active ? 'var(--color-primary)' : 'var(--color-surface)',
-                borderColor:     active ? 'var(--color-primary)' : 'var(--color-border)',
-                color:           active ? '#ffffff'              : 'var(--color-text-secondary)',
-              }}
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors
+                ${active ? 'bg-primary border-primary text-white' : 'bg-surface border-border text-text-secondary'}
+              `}
+              style={{ fontFamily: 'var(--font-body)' }}
             >
               {f}
               <span
-                className="px-1.5 py-0.5 rounded-md text-xs font-bold"
-                style={{
-                  backgroundColor: active ? 'rgba(255,255,255,0.2)' : 'var(--color-surface-2)',
-                  color:           active ? '#ffffff' : 'var(--color-text-muted)',
-                  fontFamily:      'var(--font-mono)',
-                }}
+                className={`px-1.5 py-0.5 rounded-md text-xs font-bold font-mono
+                  ${active ? 'bg-white/20 text-white' : 'bg-surface-2 text-text-muted'}
+                `}
               >
-                {count}
+                {counts[f]}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Items */}
-      {filtered.length === 0 ? (
-        <div
-          className="text-center py-12 rounded-2xl"
-          style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-        >
+      {/* Questions Review List */}
+      {filteredQuestions.length === 0 ? (
+        <div className="text-center py-12 rounded-2xl bg-surface border border-border">
           <p className="text-2xl mb-2">🎉</p>
-          <p
-            className="text-sm"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}
-          >
-            {filter === 'Wrong' ? 'No wrong answers!' : 'No skipped questions!'}
+          <p className="text-sm text-text-secondary" style={{ fontFamily: 'var(--font-body)' }}>
+            {filter === 'Wrong' ? 'No wrong answers found!' : 'No skipped questions found!'}
           </p>
         </div>
       ) : (
-        filtered.map((item, i) => {
-          const isExpanded    = expandedIndex === i;
-          const correctIndex  = item.options.findIndex((o) => o === item.correctAnswer);
-          const statusBadge   = item.isSkipped  ? <Badge variant="warning">Skipped</Badge>
-                              : item.isCorrect  ? <Badge variant="success">Correct</Badge>
-                              :                   <Badge variant="error">Wrong</Badge>;
+        filteredQuestions.map((q, idx) => {
+          const isExpanded = expandedId === q.id;
+          const userAnswer = answers[q.id];
+          const isSkipped = !userAnswer;
+          const isCorrect = userAnswer === q.correct_option;
+
+          let statusBadge = <Badge variant="error">Wrong</Badge>;
+          if (isSkipped) statusBadge = <Badge variant="warning">Skipped</Badge>;
+          if (isCorrect) statusBadge = <Badge variant="success">Correct</Badge>;
 
           return (
-            <div
-              key={item.questionId}
-              className="rounded-2xl border overflow-hidden"
-              style={{
-                backgroundColor: 'var(--color-surface)',
-                borderColor:     'var(--color-border)',
-              }}
-            >
-              {/* Collapsed header — always visible */}
+            <div key={q.id} className="rounded-2xl border border-border bg-surface overflow-hidden">
               <button
-                onClick={() => setExpandedIndex(isExpanded ? null : i)}
+                onClick={() => setExpandedId(isExpanded ? null : q.id)}
                 className="w-full flex items-start gap-3 px-4 py-4 text-left"
               >
                 <span
-                  className="shrink-0 text-xs font-bold px-2 py-1 rounded-lg mt-0.5"
-                  style={{
-                    fontFamily:      'var(--font-mono)',
-                    backgroundColor: 'var(--color-surface-2)',
-                    color:           'var(--color-text-muted)',
-                  }}
+                  className="shrink-0 text-xs font-bold font-mono px-2 py-1 rounded-lg mt-0.5 bg-surface-2 text-text-muted"
                 >
-                  Q{reviewItems.indexOf(item) + 1}
+                  Q{questions.indexOf(q) + 1}
                 </span>
 
                 <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                  <p
-                    className="text-sm leading-snug line-clamp-2"
-                    style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-primary)' }}
-                  >
-                    {item.questionText}
-                  </p>
-                  {statusBadge}
+                  <div className="text-sm text-text-primary leading-snug line-clamp-2">
+                    <QuestionRenderer text={q.question_text} inline />
+                  </div>
+                  <div>{statusBadge}</div>
                 </div>
 
                 <svg
                   width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="var(--color-text-muted)" strokeWidth="2.5"
-                  strokeLinecap="round" strokeLinejoin="round"
-                  className="shrink-0 mt-1 transition-transform"
+                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
+                  className="shrink-0 mt-1 text-text-muted transition-transform"
                   style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
                 >
                   <path d="M6 9l6 6 6-6"/>
                 </svg>
               </button>
 
-              {/* Expanded — options + explanation */}
               {isExpanded && (
-                <div
-                  className="px-4 pb-4 flex flex-col gap-3 border-t"
-                  style={{ borderColor: 'var(--color-border)' }}
-                >
-                  <div className="pt-3 flex flex-col gap-2">
-                    {item.options.map((opt, oi) => {
-                      const isUserAnswer  = item.userAnswerIndex === oi;
-                      const isCorrectOpt  = oi === correctIndex;
-                      let state = 'idle';
-                      if (item.isSkipped) {
-                        state = isCorrectOpt ? 'revealed' : 'idle';
-                      } else if (isCorrectOpt && isUserAnswer) {
-                        state = 'correct';
-                      } else if (isUserAnswer && !isCorrectOpt) {
-                        state = 'wrong';
-                      } else if (isCorrectOpt) {
-                        state = 'revealed';
+                <div className="px-4 pb-4 flex flex-col gap-3 border-t border-border animate-in fade-in duration-200">
+                  <div className="pt-3 flex flex-col gap-2.5">
+                    {OPTION_MAPPING.map(({ letter, field }) => {
+                      const isUserSelection = userAnswer === letter;
+                      const isCorrectOption = q.correct_option === letter;
+                      const optionText = q[field] ?? '';
+
+                      let buttonVariant = 'option-idle';
+                      if (isCorrectOption) {
+                        buttonVariant = 'option-correct';
+                      } else if (isUserSelection) {
+                        buttonVariant = 'option-wrong';
                       }
 
                       return (
-                        <OptionButton
-                          key={oi}
-                          index={oi}
-                          text={opt}
-                          state={state}
+                        <Button
+                          key={`${q.id}-rev-${letter}`}
+                          variant={buttonVariant}
+                          fullWidth
                           disabled
-                        />
+                          className="text-left cursor-default opacity-100"
+                        >
+                          <div className="flex items-start gap-4 text-left w-full">
+                            <span className={`
+                              w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 border
+                              ${buttonVariant === 'option-correct' ? 'bg-green-500 text-white border-green-500' : ''}
+                              ${buttonVariant === 'option-wrong' ? 'bg-red-500 text-white border-red-500' : ''}
+                              ${buttonVariant === 'option-idle' ? 'bg-surface-2 text-text-secondary border-border' : ''}
+                            `} style={{ fontFamily: 'var(--font-mono)' }}>
+                              {isCorrectOption ? '✓' : letter}
+                            </span>
+                            <div className="flex-1 pt-0.5">
+                              <QuestionRenderer text={optionText} inline />
+                            </div>
+                          </div>
+                        </Button>
                       );
                     })}
                   </div>
 
-                  {/* Explanation */}
-                  {item.explanation && (
-                    <div
-                      className="rounded-2xl px-4 py-3 border"
-                      style={{
-                        backgroundColor: 'rgba(34,197,94,0.05)',
-                        borderColor:     'rgba(34,197,94,0.2)',
-                      }}
-                    >
-                      <p
-                        className="text-xs font-semibold uppercase mb-1.5"
-                        style={{
-                          fontFamily:    'var(--font-body)',
-                          color:         'var(--color-success)',
-                          letterSpacing: '0.1em',
-                        }}
-                      >
+                  {/* Premium-Gated Explanation Section */}
+                  {q.explanation && (
+                    <div className="rounded-2xl px-4 py-3.5 border border-green-500/20 bg-green-500/[0.03] relative overflow-hidden">
+                      <p className="text-xs font-bold tracking-widest text-green-500 uppercase mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
                         Explanation
                       </p>
-                      <QuestionRenderer text={item.explanation} className="text-sm" />
+                      
+                      {isPremium ? (
+                        <QuestionRenderer text={q.explanation} className="text-sm text-text-secondary" />
+                      ) : (
+                        <div className="pt-1 flex flex-col items-center text-center">
+                          <p className="text-xs text-text-muted italic mb-3">
+                            Detailed solutions and references are locked for free tier users.
+                          </p>
+                          <Button 
+                            variant="primary" 
+                            size="sm" 
+                            className="!rounded-xl shadow-sm text-xs font-bold px-4"
+                            onClick={() => setIsUpgradeModalOpen?.(true)}
+                          >
+                            🔒 Upgrade to Unlock
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -329,106 +297,85 @@ function ReviewTab({ reviewItems = [] }) {
   );
 }
 
-// ---------------------------------------------------------------------------
-// Main ResultPage
-// ---------------------------------------------------------------------------
 const TABS = ['Overview', 'Review Corrections'];
 
-export default function ResultPage({ session, onNavigate }) {
+export default function ResultPage() {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Overview');
 
-  const { result, reset } = session;
+  const result = location.state?.result;
 
   if (!result) {
     return (
-      <div className="fixed inset-0 flex items-center justify-center" style={{ backgroundColor: 'var(--color-canvas)' }}>
-        <p style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}>
-          No result data.
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-canvas p-6 text-center">
+        <p className="text-sm text-text-muted" style={{ fontFamily: 'var(--font-body)' }}>
+          No session report data found.
         </p>
+        <Button variant="secondary" size="sm" className="mt-4" onClick={() => navigate('/')}>
+          Return to Hub
+        </Button>
       </div>
     );
   }
 
-  const handleDone = () => {
-    reset();
-    onNavigate?.('home');
-  };
-
-  const handleRetry = () => {
-    reset();
-    onNavigate?.('practice');
-  };
-
   return (
-    <div
-      className="fixed inset-0 flex flex-col"
-      style={{ backgroundColor: 'var(--color-canvas)' }}
-    >
-      {/* Header */}
-      <Header
-        title="Results"
-        rightSlot={
-          <button
-            onClick={handleDone}
-            className="text-sm font-semibold"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--color-primary)' }}
-          >
-            Done
-          </button>
-        }
-      />
+    <div className="fixed inset-0 flex flex-col bg-canvas text-text-primary select-none">
+      {/* Header Bar */}
+      <header className="sticky top-0 z-40 bg-surface border-b border-border px-5 py-4 flex items-center justify-between shrink-0">
+        <h1 className="text-base font-bold tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+          Session Results
+        </h1>
+        <button
+          onClick={() => navigate('/')}
+          className="text-sm font-bold text-primary hover:opacity-80 transition-opacity"
+          style={{ fontFamily: 'var(--font-body)' }}
+        >
+          Done
+        </button>
+      </header>
 
-      {/* Tab switcher */}
-      <div
-        className="flex shrink-0 border-b"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
+      {/* Tab Switcher Layout */}
+      <div className="flex shrink-0 border-b border-border bg-surface">
         {TABS.map((tab) => {
           const active = activeTab === tab;
           return (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className="flex-1 py-3 text-sm font-semibold relative transition-colors"
-              style={{
-                fontFamily: 'var(--font-body)',
-                color: active ? 'var(--color-primary)' : 'var(--color-text-muted)',
-              }}
+              className={`flex-1 py-3.5 text-sm font-bold relative transition-colors
+                ${active ? 'text-primary' : 'text-text-muted'}
+              `}
+              style={{ fontFamily: 'var(--font-body)' }}
             >
               {tab}
               {active && (
-                <span
-                  className="absolute bottom-0 left-1/2 -translate-x-1/2 w-10 h-0.5 rounded-full"
-                  style={{ backgroundColor: 'var(--color-primary)' }}
-                />
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-0.5 rounded-full bg-primary" />
               )}
             </button>
           );
         })}
       </div>
 
-      {/* Content */}
+      {/* Scrollable Context Box */}
       <div className="flex-1 overflow-y-auto px-5 pt-5">
-        {activeTab === 'Overview'
-          ? <OverviewTab result={result} />
-          : <ReviewTab reviewItems={result.reviewItems ?? []} />
-        }
+        {activeTab === 'Overview' ? (
+          <OverviewTab result={result} />
+        ) : (
+          <ReviewTab questions={result.questions} answers={result.answers} />
+        )}
       </div>
 
-      {/* Bottom CTA */}
+      {/* Action Control Deck */}
       <div
-        className="shrink-0 px-5 py-4 border-t flex gap-3"
-        style={{
-          borderColor:     'var(--color-border)',
-          backgroundColor: 'var(--color-canvas)',
-          paddingBottom:   'calc(1rem + env(safe-area-inset-bottom, 0px))',
-        }}
+        className="shrink-0 px-5 py-4 border-t border-border bg-canvas flex gap-3 shadow-lg"
+        style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
       >
-        <Button variant="secondary" size="md" fullWidth onClick={handleRetry}>
-          Try Again
+        <Button variant="secondary" fullWidth onClick={() => navigate('/practice')}>
+          Try Another Test
         </Button>
-        <Button variant="primary" size="md" fullWidth onClick={handleDone}>
-          Back to Home
+        <Button variant="primary" fullWidth onClick={() => navigate('/')}>
+          Back to Dashboard
         </Button>
       </div>
     </div>
