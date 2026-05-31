@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchQuestions } from './useQuestions';
 import { useApp } from '../context/AppContext';
+import { supabase } from '../lib/supabaseClient'; // 👈 Imported for backend insertion
 
 export function useTestSession() {
   const { PRACTICE_MODES } = useApp();
   
-  const [config,        setConfig]       = useState(null);
+  const [config,         setConfig]       = useState(null);
   const [questions,     setQuestions]    = useState([]);
   const [currentIndex,  setCurrentIndex] = useState(0);
   const [answers,       setAnswers]      = useState({});
@@ -16,7 +17,6 @@ export function useTestSession() {
   const timerRef = useRef(null);
 
   const launch = async (sessionConfig) => {
-    // FIXED: Synchronously wipe out questions and config instantly to block render leaks
     setIsLoading(true);
     setQuestions([]);
     setConfig(null); 
@@ -36,7 +36,6 @@ export function useTestSession() {
       console.error('[useTestSession] Failed to fetch questions:', error);
     }
 
-    // Assign fresh batch values
     setQuestions(data || []);
     setConfig(sessionConfig);
 
@@ -110,6 +109,38 @@ export function useTestSession() {
     const timeSpent = config?.mode === PRACTICE_MODES.STUDY 
       ? 0 
       : ((config.timerMinutes * 60) - timeLeft);
+
+    const scorePercent = questions.length > 0 ? (totalScore / questions.length) * 100 : 0;
+
+    // -------------------------------------------------------------------------
+    // SUPABASE DATA MUTATION PIPELINE
+    // -------------------------------------------------------------------------
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        const { error } = await supabase
+          .from('test_results')
+          .insert([{
+            user_id: user.id,
+            mode: config?.mode || 'exam',
+            school: config?.school || 'MOCK',
+            year: config?.year ? parseInt(config.year, 10) : null,
+            is_mock: !!config?.isMock,
+            total_questions: questions.length,
+            correct_count: totalScore,
+            score_percent: parseFloat(scorePercent.toFixed(2)),
+            time_taken_secs: timeSpent,
+            subject_breakdown: subjectScores // JSONB representation payloads
+          }]);
+
+        if (error) {
+          console.error('[useTestSession] Error pushing payload data map to test_results:', error.message);
+        }
+      }
+    } catch (dbError) {
+      console.error('[useTestSession] Database network interaction failure:', dbError);
+    }
 
     return {
       totalScore,

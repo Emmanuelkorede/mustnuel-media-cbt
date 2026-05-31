@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
+import { useProfile } from '../hooks/useProfile'; // 👈 Import useProfile to get accurate activation status
 import PerformanceChart from '../components/widgets/PerformanceChart';
 import QuestionRenderer from '../components/CBT/QuestionRenderer';
 import Button from '../components/ui/Button';
@@ -117,7 +118,8 @@ function OverviewTab({ result }) {
 const REVIEW_FILTERS = ['All', 'Wrong', 'Skipped'];
 
 function ReviewTab({ questions = [], answers = {} }) {
-  const { isPremium = false, setIsUpgradeModalOpen } = useApp();
+  const { setIsUpgradeModalOpen } = useApp();
+  const { isActivated } = useProfile(); // 👈 Pulling global verified premium status from your hook profile
   const [filter, setFilter] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
 
@@ -261,14 +263,14 @@ function ReviewTab({ questions = [], answers = {} }) {
                     })}
                   </div>
 
-                  {/* Premium-Gated Explanation Section */}
+                  {/* Explanation Section */}
                   {q.explanation && (
                     <div className="rounded-2xl px-4 py-3.5 border border-green-500/20 bg-green-500/[0.03] relative overflow-hidden">
                       <p className="text-xs font-bold tracking-widest text-green-500 uppercase mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
                         Explanation
                       </p>
                       
-                      {isPremium ? (
+                      {isActivated ? ( // 👈 Checking verified profile column status directly here
                         <QuestionRenderer text={q.explanation} className="text-sm text-text-secondary" />
                       ) : (
                         <div className="pt-1 flex flex-col items-center text-center">

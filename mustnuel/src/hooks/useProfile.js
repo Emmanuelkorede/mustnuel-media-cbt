@@ -1,6 +1,4 @@
-
-
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabaseClient';
 
@@ -10,8 +8,15 @@ export function useProfile() {
   const [saveError, setSaveError] = useState(null);
 
   // ---------------------------------------------------------------------------
-  // save — wraps updateProfile with loading/error state for form UIs
+  // AUTO-SYNC HOOK EFFECT
+  // Ensures metrics remain current on mount without stale calculations hanging
   // ---------------------------------------------------------------------------
+  useEffect(() => {
+    if (user?.id) {
+      refreshProfile();
+    }
+  }, [user?.id]); // 👈 Automatically refreshes state totals on component mount
+
   const save = useCallback(async (updates) => {
     setIsSaving(true);
     setSaveError(null);
@@ -27,10 +32,6 @@ export function useProfile() {
     return result;
   }, [updateProfile]);
 
-  // ---------------------------------------------------------------------------
-  // uploadAvatar — uploads a file to Supabase Storage then saves the public URL
-  // Bucket name: 'avatars' — create this in Supabase Storage with public access
-  // ---------------------------------------------------------------------------
   const uploadAvatar = useCallback(async (file) => {
     if (!user?.id) return { success: false, error: 'Not authenticated.' };
 
@@ -40,7 +41,6 @@ export function useProfile() {
     const ext      = file.name.split('.').pop();
     const filePath = `${user.id}/avatar.${ext}`;
 
-    // Upload the file (upsert:true overwrites any existing avatar)
     const { error: uploadError } = await supabase.storage
       .from('avatars')
       .upload(filePath, file, { upsert: true });
@@ -51,7 +51,6 @@ export function useProfile() {
       return { success: false, error: uploadError.message };
     }
 
-    // Get the public URL and persist it to the profile row
     const { data: { publicUrl } } = supabase.storage
       .from('avatars')
       .getPublicUrl(filePath);
@@ -63,9 +62,7 @@ export function useProfile() {
     return result;
   }, [user?.id, updateProfile]);
 
-  // ---------------------------------------------------------------------------
   // Derived display helpers
-  // ---------------------------------------------------------------------------
   const displayName   = profile?.display_name ?? user?.email?.split('@')[0] ?? 'Student';
   const initials      = displayName
     .split(/[\s._-]+/)
@@ -80,11 +77,8 @@ export function useProfile() {
   const averageScore  = profile?.average_score ?? 0;
 
   return {
-    // Raw data
     profile,
     user,
-
-    // Display helpers
     displayName,
     initials,
     avatarUrl,
@@ -93,17 +87,11 @@ export function useProfile() {
     streakCount,
     cbtCount,
     averageScore,
-
-    // Access flags
     isActivated,
     isAdmin,
-
-    // Async actions
     save,
     uploadAvatar,
     refreshProfile,
-
-    // Loading state
     isSaving,
     saveError,
   };
