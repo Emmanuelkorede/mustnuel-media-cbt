@@ -1,60 +1,81 @@
-// =============================================================================
-// src/components/ui/AppLogo.jsx
-// -----------------------------------------------------------------------------
-// The application logo mark. Import this anywhere you need the logo.
-// The background particles / glows from SplashPage are NOT part of this
-// component — those are splash-screen-only effects that live in SplashPage.
-//
-// Props:
-//   size     — number, controls width & height in px (default: 48)
-//   className — extra classes for positioning/spacing
-// =============================================================================
 
-export default function AppLogo({ size = 48, className = '' }) {
-  const s = size;
 
+export default function AppLogo({ size = 40, wordmark = false, className = "" }) {
   return (
-    <svg
-      width={s}
-      height={s}
-      viewBox="0 0 48 48"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className={className}
-      aria-label="ExamEdge logo"
-    >
-      {/* Outer rounded square background */}
-      <rect width="48" height="48" rx="14" fill="#1e3a5f" />
+    <div className={`flex items-center gap-3 ${className}`}>
+      {/* ---- SVG Icon ---- */}
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 100 100"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        aria-label="ExamEdge logo"
+      >
+        <defs>
+          {/* Smooth drop shadow for the icon layers to give it depth */}
+          <filter id="logo-shadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="0" dy="2" stdDeviation="1.5" floodColor="#000000" floodOpacity="0.15" />
+          </filter>
+        </defs>
 
-      {/* Open book — left page */}
-      <path
-        d="M10 16 C10 16 18 14 24 16 L24 34 C18 32 10 34 10 34 Z"
-        fill="white"
-        opacity="0.95"
-      />
+        {/* 1. Central Circle Ring (Now using a semi-transparent blue) */}
+        <g transform="translate(50, 50)">
+          {/* The thin visible outer border ring */}
+          <circle cx="0" cy="0" r="44" fill="none" stroke="#1b5ee4" strokeWidth="1.5" opacity="0.35" />
+          {/* The subtle blue transparent fill inside the ring */}
+          <circle cx="0" cy="0" r="44" fill="#1b5ee4" opacity="0.04" />
+          
+          {/* 2. The Vibrant Blue Graduation Cap */}
+          <g filter="url(#logo-shadow)" transform="translate(0, 1)">
+            
+            {/* Base / Neck cylinder under the cap */}
+            <path 
+              d="M -14,4
+                 C -14,10 -7,12 0,12 
+                 C 7,12 14,10 14,4 
+                 L 14,9 
+                 C 14,14.5 7,17.5 0,17.5 
+                 C -7,17.5 -14,14.5 -14,9 Z" 
+              fill="#1b5ee4" 
+            />
+            
+            {/* Seamless Tassel dropping on the right */}
+            <path 
+              d="M 0,-9 
+                 L 24,1 
+                 L 24,12 
+                 C 24,13.5 22,13.5 22,12 
+                 L 22,2.5 Z" 
+              fill="#1b5ee4" 
+            />
+            
+            {/* Rounded Diamond Top (Mortarboard) */}
+            <path 
+              d="M -28,-2 
+                 C -30,-3 -30,-4.8 -28,-5.8
+                 L -2,-16
+                 C -0.8,-16.5 0.8,-16.5 2,-16 
+                 L 28,-5.8 
+                 C 30,-4.8 30,-3 28,-2 
+                 L 2,8 
+                 C 0.8,8.5 -0.8,8.5 -2,8 Z" 
+              fill="#1b5ee4" 
+            />
+            
+          </g>
+        </g>
+      </svg>
 
-      {/* Open book — right page */}
-      <path
-        d="M38 16 C38 16 30 14 24 16 L24 34 C30 32 38 34 38 34 Z"
-        fill="white"
-        opacity="0.70"
-      />
-
-      {/* Spine */}
-      <line x1="24" y1="16" x2="24" y2="34" stroke="#3b82f6" strokeWidth="1.5" />
-
-      {/* Lines on left page */}
-      <line x1="13" y1="21" x2="21" y2="20.5" stroke="#3b82f6" strokeWidth="1" opacity="0.7" />
-      <line x1="13" y1="25" x2="21" y2="24.5" stroke="#3b82f6" strokeWidth="1" opacity="0.7" />
-      <line x1="13" y1="29" x2="21" y2="28.5" stroke="#3b82f6" strokeWidth="1" opacity="0.7" />
-
-      {/* Lines on right page */}
-      <line x1="35" y1="21" x2="27" y2="20.5" stroke="#3b82f6" strokeWidth="1" opacity="0.4" />
-      <line x1="35" y1="25" x2="27" y2="24.5" stroke="#3b82f6" strokeWidth="1" opacity="0.4" />
-      <line x1="35" y1="29" x2="27" y2="28.5" stroke="#3b82f6" strokeWidth="1" opacity="0.4" />
-
-      {/* Accent dot top-right */}
-      <circle cx="38" cy="10" r="4" fill="#f59e0b" />
-    </svg>
+      {/* ---- Wordmark (Brand Name) ---- */}
+      {wordmark && (
+        <span
+          className="text-xl font-bold tracking-tight text-slate-900 dark:text-white select-none"
+          style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+        >
+          Mustnuel's Media
+        </span>
+      )}
+    </div>
   );
 }

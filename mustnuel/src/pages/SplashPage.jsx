@@ -1,67 +1,60 @@
-// =============================================================================
-// src/pages/SplashPage.jsx
-// -----------------------------------------------------------------------------
-// App launch screen. Logo centered, app name, subtle fade-in.
-// No orbiting rings. No particles. No theatrics.
-// Auto-advances to onboarding after 2s.
-// =============================================================================
-
 import { useEffect } from 'react';
-import { motion }    from 'framer-motion';
-import AppLogo       from '../components/ui/AppLogo';
+import { useNavigate } from 'react-router';
+import AppLogo from '../components/ui/AppLogo';
 
-export default function SplashPage({ onComplete }) {
+export default function SplashPage() {
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const t = setTimeout(() => onComplete?.(), 2000);
-    return () => clearTimeout(t);
-  }, [onComplete]);
+    const timer = setTimeout(() => navigate('/onboarding'), 2000);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   return (
-    <motion.div
-      className="fixed inset-0 flex flex-col items-center justify-center bg-[--color-canvas]"
-      exit={{ opacity: 0, transition: { duration: 0.3 } }}
-    >
-      <motion.div
-        className="flex flex-col items-center gap-4"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-      >
-        <AppLogo size={64} />
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-[--color-canvas] px-6 select-none">
+      
+      <div className="flex flex-col items-center gap-5 text-center">
+        <div className="transform scale-110">
+          <AppLogo size={80} />
+        </div>
 
-        <div className="text-center">
-          <h1
-            className="text-2xl font-bold tracking-tight"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', letterSpacing: '-0.02em' }}
+        <div className="flex flex-col items-center">
+          <h1 
+            className="text-3xl font-extrabold tracking-tight leading-none text-[--color-text-primary]"
+            style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}
           >
-            Exam<span style={{ color: 'var(--color-primary)' }}>Edge</span>
+            Mustnuel's
           </h1>
-          <p
-            className="mt-1 text-xs uppercase"
-            style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)', letterSpacing: '0.18em' }}
+          <h1 
+            className="text-3xl font-extrabold tracking-tight leading-tight text-[#3b82f6]"
+            style={{ fontFamily: 'var(--font-display)', letterSpacing: '-0.03em' }}
           >
-            CBT Practice Platform
+            Media
+          </h1>
+          
+          <p 
+            className="mt-3 text-[10px] font-medium uppercase tracking-[0.22em] text-[--color-text-secondary]"
+            style={{ fontFamily: 'var(--font-body)' }}
+          >
+            Post-UTME CBT Platform
           </p>
         </div>
-      </motion.div>
+      </div>
 
-      {/* Loading dots */}
-      <motion.div
-        className="absolute bottom-14 flex gap-1.5"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.4 }}
-      >
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            className="w-1.5 h-1.5 rounded-full"
-            style={{ backgroundColor: 'var(--color-primary)' }}
-            animate={{ opacity: [0.3, 1, 0.3] }}
-            transition={{ duration: 1.2, repeat: Infinity, delay: i * 0.2 }}
-          />
-        ))}
-      </motion.div>
-    </motion.div>
+      <div className="absolute bottom-14 flex gap-1.5">
+        <div 
+          className="w-1.5 h-1.5 rounded-full animate-pulse" 
+          style={{ backgroundColor: '#3b82f6' }} 
+        />
+        <div 
+          className="w-1.5 h-1.5 rounded-full animate-pulse [animation-delay:0.2s]" 
+          style={{ backgroundColor: '#3b82f6' }} 
+        />
+        <div 
+          className="w-1.5 h-1.5 rounded-full animate-pulse [animation-delay:0.4s]" 
+          style={{ backgroundColor: '#3b82f6' }} 
+        />
+      </div>
+    </div>
   );
 }

@@ -6,9 +6,9 @@
 //
 // Props:
 //   active     — current tab id: 'home' | 'practice' | 'analytics' | 'profile'
-//   onChange   — (tabId: string) => void
 // =============================================================================
 
+import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 
 // ---------------------------------------------------------------------------
@@ -83,7 +83,9 @@ const TABS = [
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
-export default function AppTabs({ active, onChange }) {
+export default function AppTabs({ active }) {
+  const navigate = useNavigate();
+
   return (
     <nav
       className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-around px-2"
@@ -101,7 +103,7 @@ export default function AppTabs({ active, onChange }) {
         return (
           <button
             key={tab.id}
-            onClick={() => onChange?.(tab.id)}
+            onClick={() => navigate(`/${tab.id === 'home' ? '' : tab.id}`)}
             className="relative flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-colors"
             style={{
               color: isActive

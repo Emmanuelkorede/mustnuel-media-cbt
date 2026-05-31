@@ -1,71 +1,52 @@
-// =============================================================================
-// src/pages/OnboardingPage.jsx
-// -----------------------------------------------------------------------------
-// 3-slide walkthrough + final CTA frame.
-// Clean, mobile-first. Swipeable. Minimal animation — only slide transitions.
-// =============================================================================
-
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router';
+import { FiChevronLeft } from 'react-icons/fi';
 import AppLogo from '../components/ui/AppLogo';
 
-// ---------------------------------------------------------------------------
-// Slide data
-// ---------------------------------------------------------------------------
 const SLIDES = [
   {
-    id:    'simulation',
-    icon:  '🎯',
+    id: 'simulation',
+    icon: '🎯',
     title: 'Real CBT Simulation',
-    body:  'Timed sessions built exactly like the real exam — JAMB, WAEC, and Post-UTME question formats.',
+    body: 'Timed sessions built exactly like the real exam — Post-UTME question formats.',
   },
   {
-    id:    'analytics',
-    icon:  '📊',
+    id: 'analytics',
+    icon: '📊',
     title: 'Track Your Progress',
-    body:  'Subject-level breakdowns, score history, and streak tracking so you always know where you stand.',
+    body: 'Subject-level breakdowns, score history, and streak tracking so you always know where you stand.',
   },
   {
-    id:    'leaderboard',
-    icon:  '🏆',
+    id: 'leaderboard',
+    icon: '🏆',
     title: 'Weekly Leaderboards',
-    body:  'Compete against students targeting the same school. Rankings reset every Monday.',
+    body: 'Compete against students targeting the same school. Filter performance by month or week.',
   },
 ];
 
-export default function OnboardingPage({ onNavigate }) {
-  const [index, setIndex]     = useState(0);
-  const [direction, setDir]   = useState(1);
+export default function OnboardingPage() {
+  const navigate = useNavigate();
+  const [index, setIndex] = useState(0);
 
+  const isFirst = index === 0;
+  const isSecond = index === 1;
   const isLast = index === SLIDES.length - 1;
-  const slide  = SLIDES[index];
+  const slide = SLIDES[index];
 
-  const goTo = (next, dir) => { setDir(dir); setIndex(next); };
-  const goNext = () => { if (!isLast) goTo(index + 1, 1); };
-  const goPrev = () => { if (index > 0) goTo(index - 1, -1); };
-
-  const handleDragEnd = (_, info) => {
-    if (info.offset.x < -50) goNext();
-    else if (info.offset.x > 50) goPrev();
-  };
-
-  const variants = {
-    enter:  (d) => ({ x: d > 0 ? '100%' : '-100%', opacity: 0 }),
-    center: { x: 0, opacity: 1 },
-    exit:   (d) => ({ x: d > 0 ? '-100%' : '100%', opacity: 0 }),
-  };
+  const goNext = () => { if (!isLast) setIndex(index + 1); };
+  const goPrev = () => { if (index > 0) setIndex(index - 1); };
 
   return (
     <div
       className="fixed inset-0 flex flex-col"
       style={{ backgroundColor: 'var(--color-canvas)' }}
     >
-      {/* ── Top bar ── */}
+      {/* Top Header — Clean Alignment */}
       <div className="flex items-center justify-between px-5 pt-12 pb-2 shrink-0">
-        <AppLogo size={32} />
+        <AppLogo size={40} />
         <button
-          onClick={() => onNavigate?.('auth')}
-          className="text-sm px-3 py-1.5 rounded-lg border"
+          onClick={() => navigate('/auth')}
+          className="text-sm px-4 py-2 rounded-xl border font-medium transition-all duration-200 active:scale-95 cursor-pointer hover:bg-[--color-surface] hover:text-[--color-text-primary]"
           style={{
             fontFamily: 'var(--font-body)',
             color: 'var(--color-text-secondary)',
@@ -76,79 +57,96 @@ export default function OnboardingPage({ onNavigate }) {
         </button>
       </div>
 
-      {/* ── Slide content ── */}
-      <div className="relative flex-1 overflow-hidden">
-        <AnimatePresence initial={false} custom={direction} mode="popLayout">
-          <motion.div
-            key={index}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }}
-            drag="x"
-            dragConstraints={{ left: 0, right: 0 }}
-            dragElastic={0.1}
-            onDragEnd={handleDragEnd}
-            className="absolute inset-0 flex flex-col items-center justify-center px-8 select-none"
-          >
-            {/* Icon */}
-            <div className="text-6xl mb-8">{slide.icon}</div>
+      {/* Main Slide Body */}
+      <div className="relative flex-1 overflow-hidden flex flex-col items-center justify-center px-8 select-none">
+        <div className="text-7xl mb-8 transform hover:scale-105 transition-transform duration-200">
+          {slide.icon}
+        </div>
 
-            {/* Text */}
-            <div className="text-center max-w-xs">
-              <h2
-                className="text-2xl font-bold mb-3"
-                style={{
-                  fontFamily: 'var(--font-display)',
-                  color: 'var(--color-text-primary)',
-                  letterSpacing: '-0.02em',
-                }}
-              >
-                {slide.title}
-              </h2>
-              <p
-                className="text-sm leading-relaxed"
-                style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}
-              >
-                {slide.body}
-              </p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
+        <div className="text-center max-w-xs">
+          <h2
+            className="text-2xl font-bold mb-3"
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: 'var(--color-text-primary)',
+              letterSpacing: '-0.02em',
+            }}
+          >
+            {slide.title}
+          </h2>
+          <p
+            className="text-sm leading-relaxed"
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}
+          >
+            {slide.body}
+          </p>
+        </div>
       </div>
 
-      {/* ── Bottom controls ── */}
+      {/* Bottom Interface Elements */}
       <div className="px-5 pb-12 shrink-0 flex flex-col gap-5">
-        {/* Dots */}
+        
+        {/* Navigation Dot Indicators */}
         <div className="flex items-center justify-center gap-2">
           {SLIDES.map((_, i) => (
-            <motion.div
+            <div
               key={i}
-              animate={{
-                width: i === index ? 20 : 6,
+              className="h-1.5 rounded-full transition-all duration-250"
+              style={{
+                width: i === index ? '20px' : '6px',
                 backgroundColor: i === index ? 'var(--color-primary)' : 'var(--color-border)',
               }}
-              transition={{ duration: 0.25 }}
-              className="h-1.5 rounded-full"
             />
           ))}
         </div>
 
-        <AnimatePresence mode="wait">
-          {isLast ? (
-            <motion.div
-              key="cta"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="flex flex-col gap-3"
+        {/* Structured Dynamic Button Layer */}
+        <div className="flex flex-col gap-3">
+          {isFirst && (
+            <button
+              onClick={goNext}
+              className="w-full py-4 rounded-2xl text-sm font-bold text-white transition-all duration-200 hover:bg-[--color-primary-hover] active:scale-[0.99] cursor-pointer shadow-md"
+              style={{
+                fontFamily: 'var(--font-display)',
+                backgroundColor: 'var(--color-primary)',
+              }}
             >
+              Next
+            </button>
+          )}
+
+          {isSecond && (
+            <div className="flex flex-col gap-3">
               <button
-                onClick={() => onNavigate?.('auth', { mode: 'signup' })}
-                className="w-full py-4 rounded-2xl text-sm font-bold text-white"
+                onClick={goNext}
+                className="w-full py-4 rounded-2xl text-sm font-bold text-white transition-all duration-200 hover:bg-[--color-primary-hover] active:scale-[0.99] cursor-pointer shadow-md"
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  backgroundColor: 'var(--color-primary)',
+                }}
+              >
+                Next
+              </button>
+              <button
+                onClick={goPrev}
+                className="w-full py-3.5 rounded-2xl text-sm font-semibold border flex items-center justify-center gap-2 transition-all duration-200 hover:bg-[--color-surface-2] active:scale-[0.99] cursor-pointer"
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  color: 'var(--color-text-secondary)',
+                  borderColor: 'var(--color-border)',
+                  backgroundColor: 'var(--color-surface)',
+                }}
+              >
+                <FiChevronLeft size={16} /> Previous
+              </button>
+            </div>
+          )}
+
+          {isLast && (
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate('/auth')}
+                className="w-full py-4 rounded-2xl text-sm font-bold text-white transition-all duration-200 hover:bg-[--color-primary-hover] active:scale-[0.99] cursor-pointer shadow-md"
                 style={{
                   fontFamily: 'var(--font-display)',
                   backgroundColor: 'var(--color-primary)',
@@ -157,8 +155,8 @@ export default function OnboardingPage({ onNavigate }) {
                 Create Account
               </button>
               <button
-                onClick={() => onNavigate?.('auth', { mode: 'signin' })}
-                className="w-full py-3.5 rounded-2xl text-sm font-semibold border"
+                onClick={() => navigate('/auth')}
+                className="w-full py-3.5 rounded-2xl text-sm font-semibold border transition-all duration-200 hover:bg-[--color-surface-2] active:scale-[0.99] cursor-pointer"
                 style={{
                   fontFamily: 'var(--font-body)',
                   color: 'var(--color-text-secondary)',
@@ -168,36 +166,9 @@ export default function OnboardingPage({ onNavigate }) {
               >
                 Sign In
               </button>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="nav"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="flex items-center gap-3"
-            >
-              <button
-                onClick={goPrev}
-                disabled={index === 0}
-                className="w-12 h-12 rounded-xl border flex items-center justify-center disabled:opacity-20"
-                style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-secondary)' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M15 18l-6-6 6-6"/>
-                </svg>
-              </button>
-              <button
-                onClick={goNext}
-                className="flex-1 py-4 rounded-2xl text-sm font-bold text-white"
-                style={{ fontFamily: 'var(--font-display)', backgroundColor: 'var(--color-primary)' }}
-              >
-                Next
-              </button>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
     </div>
   );

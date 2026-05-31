@@ -1,16 +1,16 @@
-// =============================================================================
-// src/App.jsx
-// =============================================================================
 
 import { useState, useEffect } from 'react';
-import { AnimatePresence }         from 'framer-motion';
-import { useAuth }                     from './context/AuthContext';
+import { AnimatePresence } from 'framer-motion';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router';
+import { useAuth } from './context/AuthContext';
 
-import SplashPage     from './pages/SplashPage';
+import SplashPage from './pages/SplashPage';
 import OnboardingPage from './pages/OnboardingPage';
-import AuthPage       from './pages/AuthPage';
-import SetupPage      from './pages/SetupPage';
-import HomePage       from './pages/HomePage';
+import AuthPage from './pages/AuthPage';
+import SetupPage from './pages/SetupPage';
+import HomePage from './pages/HomePage';
+import PracticeHubPage from './pages/PracticeHubPage';
+import UpgradeModal from './components/ui/UpgradeModal';
 
 function ComingSoon({ label }) {
   return (
@@ -26,31 +26,36 @@ function ComingSoon({ label }) {
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
-  const [route, setRoute] = useState(null);
   const [authMode, setAuthMode] = useState('signin');
+  
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  
+  const currentRoute = location.pathname === '/' ? null : location.pathname.replace('/', '');
 
   useEffect(() => {
     if (isLoading) return;
 
     if (!user) {
-      if (route === null) {
-        setRoute('splash');
-      } else if (!['splash', 'onboarding', 'auth'].includes(route)) {
-        setRoute('onboarding');
+      if (currentRoute === null) {
+        navigate('/splash', { replace: true });
+      } else if (!['splash', 'onboarding', 'auth'].includes(currentRoute)) {
+        navigate('/onboarding', { replace: true });
       }
       return;
     }
 
     if (isProfileComplete) {
-      if (route === null || ['splash', 'onboarding', 'auth', 'setup'].includes(route)) {
-        setRoute('home');
+      if (currentRoute === null || ['splash', 'onboarding', 'auth', 'setup'].includes(currentRoute)) {
+        navigate('/home', { replace: true });
       }
     } else {
-      if (route !== 'setup') {
-        setRoute('setup');
+      if (currentRoute !== 'setup') {
+        navigate('/setup', { replace: true });
       }
     }
-  }, [isLoading, user, isProfileComplete, route]);
+  }, [isLoading, user, isProfileComplete, currentRoute, navigate]);
 
   const onNavigate = (target, options = {}) => {
     if (target === 'auth' && options?.mode) {
@@ -64,10 +69,10 @@ export default function App() {
       return;
     }
 
-    setRoute(target);
+    navigate(`/${target}`);
   };
 
-  if (isLoading || route === null) {
+  if (isLoading || currentRoute === null) {
     return (
       <div
         className="fixed inset-0"
@@ -77,16 +82,25 @@ export default function App() {
   }
 
   return (
+    <>  
     <AnimatePresence mode="wait">
-      {route === 'splash' && <SplashPage key="splash" onComplete={() => setRoute('onboarding')} />}
-      {route === 'onboarding' && <OnboardingPage key="onboarding" onNavigate={onNavigate} />}
-      {route === 'auth' && <AuthPage key="auth" initialMode={authMode} onNavigate={onNavigate} />}
-      {route === 'setup' && <SetupPage key="setup" onComplete={() => setRoute('home')} />}
-      {route === 'home' && <HomePage key="home" onNavigate={onNavigate} />}
-      {route === 'practice' && <ComingSoon key="practice" label="Practice Hub" />}
-      {route === 'analytics' && <ComingSoon key="analytics" label="Analytics" />}
-      {route === 'profile' && <ComingSoon key="profile" label="Profile" />}
-      {route === 'notifications' && <ComingSoon key="notifications" label="Notifications" />}
+      <Routes location={location} key={location.pathname}>
+        <Route path="/splash" element={<SplashPage onComplete={() => navigate('/onboarding')} />} />
+        <Route path="/onboarding" element={<OnboardingPage onNavigate={onNavigate} />} />
+        <Route path="/auth" element={<AuthPage initialMode={authMode} onNavigate={onNavigate} />} />
+        <Route path="/setup" element={<SetupPage onComplete={() => navigate('/home')} />} />
+        <Route path="/home" element={<HomePage onNavigate={onNavigate} />} />
+        <Route path="/practice" element={<PracticeHubPage />} />
+        <Route path="/analytics" element={<ComingSoon label="Analytics" />} />
+        <Route path="/profile" element={<ComingSoon label="Profile" />} />
+        <Route path="/notifications" element={<ComingSoon label="Notifications" />} />
+        
+        {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
+        <Route path="*" element={<Navigate to={user ? (isProfileComplete ? "/home" : "/setup") : "/onboarding"} replace />} />
+      </Routes>
     </AnimatePresence>
+
+    <UpgradeModal />
+    </>
   );
 }
