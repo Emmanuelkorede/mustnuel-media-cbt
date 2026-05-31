@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useProfile }     from '../hooks/useProfile';
-import { useTestSession } from '../hooks/useTestSession';
 import { useApp }         from '../context/AppContext';
 import AppTabs            from '../components/navigation/AppTabs';
 import Button             from '../components/ui/Button';
+
+const QUANTITY_OPTIONS = [10, 20, 30, 40, 60];
 
 function SectionLabel({ children }) {
   return (
@@ -147,12 +148,21 @@ function YearSelector({ year, isMock, onYearChange, onMockChange }) {
 }
 
 function SubjectSelector({ allSubjects = [], selected, recommended = [], onChange }) {
+  const MAX_SUBJECTS = 4;
+  const isMaxReached = selected.length >= MAX_SUBJECTS;
+
   const toggle = (s) => {
-    onChange(
-      selected.includes(s)
-        ? selected.filter((x) => x !== s)
-        : [...selected, s]
-    );
+    if (selected.includes(s)) {
+      onChange(selected.filter((x) => x !== s));
+    } else {
+      if (isMaxReached) return;
+      onChange([...selected, s]);
+    }
+  };
+
+  const selectRecommended = () => {
+    const safeRecommended = recommended.slice(0, MAX_SUBJECTS);
+    onChange(safeRecommended);
   };
 
   return (
@@ -166,7 +176,7 @@ function SubjectSelector({ allSubjects = [], selected, recommended = [], onChang
             Recommended:
           </span>
           <button
-            onClick={() => onChange(recommended)}
+            onClick={selectRecommended}
             className="text-xs px-2.5 py-1 rounded-lg border font-semibold transition-all duration-150 active:scale-95 cursor-pointer"
             style={{
               fontFamily:      'var(--font-body)',
@@ -175,7 +185,7 @@ function SubjectSelector({ allSubjects = [], selected, recommended = [], onChang
               color:           'var(--color-primary)',
             }}
           >
-            Select all recommended
+            Select recommended
           </button>
         </div>
       )}
@@ -184,11 +194,14 @@ function SubjectSelector({ allSubjects = [], selected, recommended = [], onChang
         {allSubjects.map((s) => {
           const isSelected    = selected.includes(s);
           const isRecommended = recommended.includes(s);
+          const isDisabled    = !isSelected && isMaxReached;
+
           return (
             <button
               key={s}
               onClick={() => toggle(s)}
-              className="px-3 py-2 rounded-xl border text-xs font-medium transition-all duration-150 active:scale-95 cursor-pointer"
+              disabled={isDisabled}
+              className={`px-3 py-2 rounded-xl border text-xs font-medium transition-all duration-150 ${isDisabled ? 'opacity-40 cursor-not-allowed' : 'active:scale-95 cursor-pointer'}`}
               style={{
                 fontFamily:      'var(--font-body)',
                 backgroundColor: isSelected
@@ -212,10 +225,11 @@ function SubjectSelector({ allSubjects = [], selected, recommended = [], onChang
 
       {selected.length > 0 && (
         <p
-          className="text-xs"
+          className="text-xs flex justify-between"
           style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}
         >
-          {selected.length} subject{selected.length > 1 ? 's' : ''} selected
+          <span>{selected.length} subject{selected.length > 1 ? 's' : ''} selected</span>
+          {isMaxReached && <span className="text-error font-semibold">Maximum of 4 reached</span>}
         </p>
       )}
     </div>
@@ -249,58 +263,97 @@ function TimerSelector({ value, onChange }) {
   );
 }
 
+function QuestionQuantitySelector({ value, onChange, isActivated, onPremiumClick }) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex gap-2">
+        {QUANTITY_OPTIONS.map((num) => {
+          const active = value === num;
+          // Free users can select any value that is 20 or lower. Higher options get locked.
+          const isLocked = !isActivated && num > 20;
+
+          return (
+            <button
+              key={num}
+              onClick={() => isLocked ? onPremiumClick() : onChange(num)}
+              className={`flex-1 py-3 rounded-2xl border text-xs font-bold transition-all duration-150 ${isLocked ? 'opacity-60 cursor-pointer' : 'active:scale-95 cursor-pointer'}`}
+              style={{
+                fontFamily:      'var(--font-mono)',
+                backgroundColor: active ? 'var(--color-primary)' : 'var(--color-surface)',
+                borderColor:     active ? 'var(--color-primary)' : 'var(--color-border)',
+                color:           active ? '#ffffff'              : 'var(--color-text-secondary)',
+              }}
+            >
+              {num} {isLocked ? '🔒' : 'Qs'}
+            </button>
+          );
+        })}
+      </div>
+      {!isActivated && (
+        <p className="text-[10px] italic text-center" style={{ color: 'var(--color-primary)' }}>
+          *Premium options are locked. Free users can select 20 questions or fewer.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export default function PracticeHubPage() {
   const navigate = useNavigate();
   const location = useLocation();
   
   const { isActivated, targetSchool } = useProfile();
-  
-  const { 
-    POST_UTME_SUBJECTS_BY_SCHOOL, 
-    PRACTICE_MODES, 
-    setIsUpgradeModalOpen 
-  } = useApp(); 
-  
-  const session = useTestSession();
+  const { POST_UTME_SUBJECTS_BY_SCHOOL, PRACTICE_MODES, setIsUpgradeModalOpen } = useApp(); 
 
   const school = targetSchool || 'UI'; 
   const schoolConfig = POST_UTME_SUBJECTS_BY_SCHOOL[school] || POST_UTME_SUBJECTS_BY_SCHOOL['UI'];
 
-  const [mode,     setMode]     = useState(PRACTICE_MODES.EXAM);
-  const [year,     setYear]     = useState(null);
-  const [isMock,   setIsMock]   = useState(false);
-  const [timer,    setTimer]    = useState(60);
-  const [subjects, setSubjects] = useState([]);
+  const [mode,       setMode]     = useState(PRACTICE_MODES.EXAM);
+  const [year,       setYear]     = useState(null);
+  const [isMock,     setIsMock]   = useState(false);
+  const [timer,      setTimer]    = useState(60);
+  const [subjects,   setSubjects] = useState([]);
+  const [qQuantity,  setQQuantity] = useState(isActivated ? 40 : 20); 
+
+  useEffect(() => {
+    // If user's tier premium checks fail, step them down only if their value exceeded the 20 ceiling
+    if (!isActivated && qQuantity > 20) {
+      setQQuantity(20);
+    }
+  }, [isActivated, qQuantity]);
 
   useEffect(() => {
     if (schoolConfig) {
-      setSubjects(schoolConfig.default_selection);
+      setSubjects(schoolConfig.default_selection.slice(0, 4));
     }
-  }, [school]);
+  }, [school, schoolConfig]);
 
   useEffect(() => {
     if (location.state?.mode) {
       if (location.state.mode === 'study') setMode(PRACTICE_MODES.STUDY);
       if (location.state.mode === 'exam')  setMode(PRACTICE_MODES.EXAM);
     }
-  }, [location.state]);
+  }, [location.state, PRACTICE_MODES]);
 
   const canLaunch = subjects.length > 0 && school && (isMock || year);
 
-  const handleLaunch = async () => {
+  const handleLaunch = () => {
     if (!canLaunch) return;
 
-    await session.launch({
-      mode,
-      school,
-      subjects,
-      year:          isMock ? null : year,
-      isMock,
-      timerMinutes:  mode === PRACTICE_MODES.STUDY ? 999 : timer,
-      freeOnly:      !isActivated,
+    // Zero database loading is processed here now. Redirecting instantly.
+    navigate('/cbt-session', {
+      state: {
+        sessionConfig: {
+          mode,
+          school,
+          subjects,
+          year: isMock ? null : year,
+          timerMinutes: mode === PRACTICE_MODES.STUDY ? 0 : timer,
+          freeOnly: !isActivated,
+          limit: qQuantity,
+        }
+      }
     });
-
-    navigate('/cbt-session');
   };
 
   return (
@@ -308,51 +361,46 @@ export default function PracticeHubPage() {
       className="fixed inset-0 flex flex-col select-none"
       style={{ backgroundColor: 'var(--color-canvas)' }}
     >
+      <div 
+        className="flex items-center justify-between px-5 pt-4 pb-3 sticky top-0 z-20 backdrop-blur-md bg-opacity-95"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderBottom:    '1px solid var(--color-border)',
+        }}
+      >
+        <div className="flex-1 text-left">
+          <button
+            onClick={() => navigate('/')}
+            className="w-8 h-8 rounded-lg flex items-center justify-center border transition-all duration-150 active:scale-95 cursor-pointer"
+            style={{
+              backgroundColor: 'var(--color-surface-2)',
+              borderColor:    'var(--color-border)',
+              color:           'var(--color-text-secondary)',
+            }}
+            aria-label="Go back"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+              stroke="currentColor" strokeWidth="2.5"
+              strokeLinecap="round" strokeLinejoin="round">
+              <path d="M15 18l-6-6 6-6"/>
+            </svg>
+          </button>
+        </div>
 
-        {/* Tightened Authentic Header Bar */}
-<div 
-  className="flex items-center justify-between px-5 pt-4 pb-3 sticky top-0 z-20 backdrop-blur-md bg-opacity-95"
-  style={{
-    backgroundColor: 'var(--color-surface)',
-    borderBottom:    '1px solid var(--color-border)',
-  }}
->
-  <div className="flex-1 text-left">
-    <button
-      onClick={() => navigate('/')}
-      className="w-8 h-8 rounded-lg flex items-center justify-center border transition-all duration-150 active:scale-95 cursor-pointer"
-      style={{
-        backgroundColor: 'var(--color-surface-2)',
-        borderColor:    'var(--color-border)',
-        color:           'var(--color-text-secondary)',
-      }}
-      aria-label="Go back"
-      onMouseEnter={e => e.currentTarget.style.opacity = '0.9'}
-      onMouseLeave={e => e.currentTarget.style.opacity = '1'}
-    >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
-        stroke="currentColor" strokeWidth="2.5"
-        strokeLinecap="round" strokeLinejoin="round">
-        <path d="M15 18l-6-6 6-6"/>
-      </svg>
-    </button>
-  </div>
+        <h1
+          className="text-base font-black text-center whitespace-nowrap px-2"
+          style={{
+            fontFamily:    'var(--font-display)',
+            color:         'var(--color-text-primary)',
+            letterSpacing: '-0.01em',
+          }}
+        >
+          Practice Hub
+        </h1>
 
-  <h1
-    className="text-base font-black text-center whitespace-nowrap px-2"
-    style={{
-      fontFamily:    'var(--font-display)',
-      color:         'var(--color-text-primary)',
-      letterSpacing: '-0.01em',
-    }}
-  >
-    Practice Hub
-  </h1>
+        <div className="flex-1" />
+      </div>
 
-  <div className="flex-1" />
-</div>
-
-      {/* Configuration panel */}
       <div
         className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-5"
         style={{ paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}
@@ -391,6 +439,16 @@ export default function PracticeHubPage() {
           />
         </div>
 
+        <div className="flex flex-col">
+          <SectionLabel>Number of Questions</SectionLabel>
+          <QuestionQuantitySelector 
+            value={qQuantity} 
+            onChange={setQQuantity}
+            isActivated={isActivated}
+            onPremiumClick={() => setIsUpgradeModalOpen(true)}
+          />
+        </div>
+
         {mode === PRACTICE_MODES.EXAM && (
           <div className="flex flex-col">
             <SectionLabel>Timer</SectionLabel>
@@ -399,7 +457,6 @@ export default function PracticeHubPage() {
         )}
       </div>
 
-      {/* Tightened fixed bottom launch bar */}
       <div
         className="px-5 pt-3 pb-4 border-t shadow-sm"
         style={{
@@ -413,10 +470,9 @@ export default function PracticeHubPage() {
           size="md"
           fullWidth
           disabled={!canLaunch}
-          loading={session.isLoading}
           onClick={handleLaunch}
         >
-          {session.isLoading ? 'Preparing Session…' : 'Launch →'}
+          Launch Practice →
         </Button>
       </div>
 

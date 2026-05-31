@@ -1,118 +1,130 @@
-// =============================================================================
-// src/hooks/useQuestions.js
-// -----------------------------------------------------------------------------
-// All question bank queries against public.questions.
-//
-// Exports:
-//   fetchQuestions(filters) — plain async fn, used by useTestSession
-//   useQuestions(filters)   — reactive hook, used by PracticeHubPage
-//
-// Filter shape:
-// {
-//   school:   string          'UI' | 'UNILAG' | 'OAU'
-//   subjects: string[]        e.g. ['Mathematics', 'Physics']
-//   year:     number | null   null = pull from mock pool
-//   isMock:   boolean         true = is_mock_pool rows, ignore year
-//   freeOnly: boolean         true = is_free rows only (free-tier users)
-//   limit:    number          max rows (default 60)
-// }
-// =============================================================================
-
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
-// ---------------------------------------------------------------------------
-// buildQuery — pure function, builds the Supabase query from filters.
-// Shared by both the hook and the standalone fetch function.
-// ---------------------------------------------------------------------------
-function buildQuery(filters = {}) {
+/**
+ * Fetches a randomized pool of questions for a specific single subject.
+ */
+export async function fetchQuestionsForSubject({ school, subject, year, freeOnly, limit }) {
+  try {
+    let q = supabase
+      .from('questions')
+      .select('id, school, subject, year, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, is_free');
+
+    // Filter by school safely
+    if (school) q = q.eq('school', school.toUpperCase().trim());
+    
+    // Filter by specific single subject
+    if (subject) q = q.eq('subject', subject);
+
+    // If a specific year is chosen, filter by it. If null, ignore year filter (Mock Mode)
+    if (year) {
+      const parsedYear = parseInt(year, 10);
+      if (!isNaN(parsedYear)) {
+        q = q.eq('year', parsedYear);
+      }
+    }
+
+    if (freeOnly) q = q.eq('is_free', true);
+
+    // Enforce the strict allocation limit passed down from the master builder
+    const { data, error } = await q.limit(limit);
+
+    if (error) {
+      console.error(`[fetchQuestionsForSubject] Error fetching ${subject}:`, error.message);
+      return [];
+    }
+
+    return data ?? [];
+  } catch (err) {
+    console.error(`[fetchQuestionsForSubject] Unexpected failure for ${subject}:`, err);
+    return [];
+  }
+}
+
+/**
+ * Master session setup loader.
+ * Iterates through chosen subjects, balances the distribution perfectly,
+ * and handles leftover question allocations cleanly.
+ */
+export async function fetchQuestions(filters = {}) {
   const {
     school,
     subjects = [],
-    year     = null,
-    isMock   = false,
+    year     = null, 
     freeOnly = false,
-    limit    = 60,
+    limit    = 40,   
   } = filters;
 
-  let q = supabase
-    .from('questions')
-    .select(
-      'id, school, subject, year, question_text, options, correct_answer, explanation, is_free, is_mock_pool'
-    );
+  if (!subjects || subjects.length === 0) return { data: [], error: null };
 
-  if (school)            q = q.eq('school', school);
-  if (subjects.length === 1) q = q.eq('subject', subjects[0]);
-  if (subjects.length > 1)   q = q.in('subject', subjects);
-
-  if (isMock || !year) {
-    q = q.eq('is_mock_pool', true);
-  } else {
-    q = q.eq('year', year);
-  }
-
-  if (freeOnly) q = q.eq('is_free', true);
-
-  return q.limit(limit);
-}
-
-// ---------------------------------------------------------------------------
-// fetchQuestions — plain async function, no React state.
-// Returns { data: Question[], error: string | null }
-// Call this from useTestSession to load the active exam question set.
-// ---------------------------------------------------------------------------
-export async function fetchQuestions(filters = {}) {
   try {
-    const { data, error } = await buildQuery(filters);
+    const totalSubjects = subjects.length;
+    
+    // Strict Distribution Math
+    const basePerSubject = Math.floor(limit / totalSubjects);
+    const remainder = limit % totalSubjects;
 
-    if (error) {
-      console.error('[fetchQuestions]', error.message);
-      return { data: [], error: error.message };
+    const fetchPromises = subjects.map((subj, idx) => {
+      // If there is a remainder, distribute 1 extra question to the first few subjects
+      const allocatedCount = basePerSubject + (idx < remainder ? 1 : 0);
+
+      // Only fire the fetch if the allocated count is greater than 0
+      if (allocatedCount === 0) return Promise.resolve([]);
+
+      return fetchQuestionsForSubject({
+        school,
+        subject: subj,
+        year,
+        freeOnly,
+        limit: allocatedCount,
+      });
+    });
+
+    const resultsArray = await Promise.all(fetchPromises);
+    
+    // Flatten all subject arrays into a single unified master array
+    let masterPool = resultsArray.flat();
+
+    // Global client-side random shuffle to mix subjects evenly
+    masterPool = masterPool.sort(() => Math.random() - 0.5);
+
+    // Enforce an absolute hard boundary cap array length to match user request selection
+    if (masterPool.length > limit) {
+      masterPool = masterPool.slice(0, limit);
     }
 
-    // Shuffle client-side so order varies each session
-    const shuffled = (data ?? []).sort(() => Math.random() - 0.5);
-    return { data: shuffled, error: null };
+    return { data: masterPool, error: null };
   } catch (err) {
-    console.error('[fetchQuestions] unexpected:', err);
-    return { data: [], error: 'Failed to load questions.' };
+    console.error('[fetchQuestions] Master builder unexpected failure:', err);
+    return { data: [], error: 'Failed to balance and load examination questions.' };
   }
 }
 
-// ---------------------------------------------------------------------------
-// useQuestions — reactive hook, re-fetches whenever filters change.
-// Used in PracticeHubPage to show a live question count preview.
-//
-// Returns:
-//   questions   Question[]
-//   isLoading   boolean
-//   error       string | null
-//   refetch     () => void
-//   totalCount  number
-// ---------------------------------------------------------------------------
+/**
+ * Reactive Hook used for live counting previews on dashboard summary panels
+ */
 export function useQuestions(filters = {}) {
   const [questions, setQuestions] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error,     setError]     = useState(null);
 
-  // JSON string makes the dependency stable across renders
   const filterKey = JSON.stringify(filters);
 
   const load = useCallback(async () => {
-    if (!filters.school) { setQuestions([]); return; }
+    if (!filters.school || !filters.subjects?.length) { 
+      setQuestions([]); 
+      return; 
+    }
 
     setIsLoading(true);
     setError(null);
 
-    const { data, error: err } = await fetchQuestions(
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      JSON.parse(filterKey)
-    );
+    const { data, error: err } = await fetchQuestions(JSON.parse(filterKey));
 
     setQuestions(data);
     setError(err);
     setIsLoading(false);
-  }, [filterKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [filterKey]);
 
   useEffect(() => { load(); }, [load]);
 
