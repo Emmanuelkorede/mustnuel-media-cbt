@@ -63,7 +63,7 @@ export const SUBJECTS_BY_TRACK = {
 
 export const AVAILABLE_YEARS = Array.from(
   { length: 2025 - 2020 + 1 },
-  (_, i) => 2024 - i
+  (_, i) => 2025 - i
 );
 
 export const PRACTICE_MODES = {
