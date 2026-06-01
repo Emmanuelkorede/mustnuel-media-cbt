@@ -4,11 +4,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext'; 
+import { useAuth } from '../context/AuthContext'; // Confirmed context channel
 import { FiChevronLeft, FiCheck, FiCopy, FiUploadCloud, FiAlertCircle, FiAward } from 'react-icons/fi';
 
 export default function PremiumPage() {
-  const { user } = useAuth(); 
+  // Pulling profile rows and isActivated directly from your AuthContext structure
+  const { user, isActivated } = useAuth(); 
   const navigate = useNavigate();
   
   const [file, setFile] = useState(null);
@@ -29,8 +30,8 @@ export default function PremiumPage() {
     
     async function checkSubmissionStatus() {
       try {
-        // If the user context profile already shows they are premium, bypass checking queues
-        if (user.is_premium) {
+        // FIXED: Checks the real-time context activation status rather than the auth metadata layer
+        if (isActivated) {
           setIsCheckingStatus(false);
           return;
         }
@@ -53,7 +54,7 @@ export default function PremiumPage() {
     }
 
     checkSubmissionStatus();
-  }, [user]);
+  }, [user, isActivated]);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -87,7 +88,6 @@ export default function PremiumPage() {
       const fileName = `${Date.now()}_receipt.${fileExt}`;
       const filePath = `${user.id}/${fileName}`;
 
-      // Upload payload directly into the 'receipts' bucket
       const { error: uploadError } = await supabase.storage
         .from('receipts')
         .upload(filePath, file);
@@ -98,7 +98,6 @@ export default function PremiumPage() {
         .from('receipts')
         .getPublicUrl(filePath);
 
-      // Save record matching database snake_case structure
       const { data: newSubmission, error: dbError } = await supabase
         .from('premium_submissions')
         .insert([
@@ -220,8 +219,8 @@ export default function PremiumPage() {
           >
             Connecting to system ledger...
           </div>
-        ) : user?.is_premium ? (
-          /* State 1: User profile has already been set to true by Admin */
+        ) : isActivated ? (
+          /* State 1: FIXED to verify based on profiles database sync table values via isActivated flag */
           <section 
             className="rounded-3xl p-6 border text-center flex flex-col items-center gap-4 transition-all duration-300"
             style={{ 
@@ -260,7 +259,7 @@ export default function PremiumPage() {
                 Verification In Queue
               </h3>
               <p className="text-xs mt-2 leading-relaxed" style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
-                Your receipt screenshot has been safely logged. System administrators are  verifying your transfer now. Access usually switches live within 1 to 12 hours.
+                Your receipt screenshot has been safely logged. System administrators are verifying your transfer now. Access usually switches live within 1 to 12 hours.
               </p>
             </div>
             <div 

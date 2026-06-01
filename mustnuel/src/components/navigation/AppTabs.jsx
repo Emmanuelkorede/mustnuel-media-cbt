@@ -3,6 +3,7 @@
 // =============================================================================
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
+import { useAuth } from '../../context/AuthContext'; // Updated path directly to your context provider
 
 const TABS = [
   {
@@ -35,7 +36,7 @@ const TABS = [
   },
   {
     id:    'leaderboard',
-    label: 'leaderboard',
+    label: 'Leaderboard',
     icon:  (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth="1.8"
@@ -70,8 +71,24 @@ const TABS = [
   },
 ];
 
+const ADMIN_TAB = {
+  id:    'admin',
+  label: 'Admin',
+  icon:  (active) => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="1.8"
+      strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" fill={active ? 'currentColor' : 'none'} />
+      <path d="M9 17v-5m3 5V9m3 8v-3" stroke={active ? "white" : "currentColor"} strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  ),
+};
+
 export default function AppTabs({ active }) {
   const navigate = useNavigate();
+  const { isAdmin } = useAuth(); // Uses your context flag directly
+
+  const activeTabsList = isAdmin ? [...TABS, ADMIN_TAB] : TABS;
 
   return (
     <nav
@@ -84,13 +101,21 @@ export default function AppTabs({ active }) {
         height:          'calc(60px + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {TABS.map((tab) => {
+      {activeTabsList.map((tab) => {
         const isActive = active === tab.id;
+        
+        const handleRouteNavigation = () => {
+          if (tab.id === 'admin') {
+            navigate('/admin/dashboard');
+          } else {
+            navigate(`/${tab.id}`);
+          }
+        };
+
         return (
           <button
             key={tab.id}
-            /* FIXED: Explicitly navigates to the exact active route token, avoiding index reset refreshes */
-            onClick={() => navigate(`/${tab.id}`)}
+            onClick={handleRouteNavigation}
             className="relative flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-colors"
             style={{
               color: isActive
@@ -100,7 +125,6 @@ export default function AppTabs({ active }) {
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
           >
-            {/* Active indicator pill */}
             {isActive && (
               <motion.div
                 layoutId="tab-indicator"
@@ -110,18 +134,16 @@ export default function AppTabs({ active }) {
               />
             )}
 
-            {/* Icon */}
             <div className="w-6 h-6 flex items-center justify-center">
               {tab.icon(isActive)}
             </div>
 
-            {/* Label */}
             <span
-              className="text-2xs font-medium"
+              className="text-2xs font-medium uppercase tracking-wider"
               style={{
                 fontFamily: 'var(--font-body)',
-                fontSize:   '0.625rem',
-                fontWeight: isActive ? 600 : 400,
+                fontSize:   '0.58rem',
+                fontWeight: isActive ? 700 : 500,
               }}
             >
               {tab.label}
