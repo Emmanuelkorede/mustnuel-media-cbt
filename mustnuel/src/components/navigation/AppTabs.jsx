@@ -1,11 +1,9 @@
-
-
+// =============================================================================
+// src/components/ui/AppTabs.jsx
+// =============================================================================
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
 
-// ---------------------------------------------------------------------------
-// Tab definitions
-// ---------------------------------------------------------------------------
 const TABS = [
   {
     id:    'home',
@@ -72,9 +70,6 @@ const TABS = [
   },
 ];
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 export default function AppTabs({ active }) {
   const navigate = useNavigate();
 
@@ -84,7 +79,6 @@ export default function AppTabs({ active }) {
       style={{
         backgroundColor: 'var(--color-surface)',
         borderTop:       '1px solid var(--color-border)',
-        // Safe area for iOS home bar
         paddingBottom:   'env(safe-area-inset-bottom, 12px)',
         paddingTop:      '8px',
         height:          'calc(60px + env(safe-area-inset-bottom, 0px))',
@@ -95,7 +89,8 @@ export default function AppTabs({ active }) {
         return (
           <button
             key={tab.id}
-            onClick={() => navigate(`/${tab.id === 'home' ? '' : tab.id}`)}
+            /* FIXED: Explicitly navigates to the exact active route token, avoiding index reset refreshes */
+            onClick={() => navigate(`/${tab.id}`)}
             className="relative flex flex-col items-center justify-center gap-1 flex-1 py-1 transition-colors"
             style={{
               color: isActive
@@ -105,7 +100,7 @@ export default function AppTabs({ active }) {
             aria-label={tab.label}
             aria-current={isActive ? 'page' : undefined}
           >
-            {/* Active indicator pill above icon */}
+            {/* Active indicator pill */}
             {isActive && (
               <motion.div
                 layoutId="tab-indicator"

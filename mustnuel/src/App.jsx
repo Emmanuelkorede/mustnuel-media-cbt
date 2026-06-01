@@ -16,18 +16,7 @@ import ResultPage from './pages/ResultPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
-
-function ComingSoon({ label }) {
-  return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center gap-2"
-      style={{ backgroundColor: 'var(--color-canvas)' }}>
-      <span className="text-4xl">🚧</span>
-      <p style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-secondary)', fontSize: '1rem' }}>
-        {label}
-      </p>
-    </div>
-  );
-}
+import NotificationsPage from './pages/notifications';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -36,7 +25,6 @@ export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  
   const currentRoute = location.pathname === '/' ? null : location.pathname.replace('/', '');
 
   useEffect(() => {
@@ -77,12 +65,59 @@ export default function App() {
     navigate(`/${target}`);
   };
 
+  // ── Real Skeleton Loading Page Layout ──
   if (isLoading || currentRoute === null) {
     return (
-      <div
-        className="fixed inset-0"
-        style={{ backgroundColor: 'var(--color-canvas)' }}
-      />
+      <div className="fixed inset-0 flex flex-col select-none pointer-events-none" style={{ backgroundColor: 'var(--color-canvas)' }}>
+        
+        {/* Fake Top Branding / Header Area */}
+        <div className="w-full px-6 pt-14 pb-6 flex items-center justify-between border-b" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+          <div className="h-5 w-24 rounded-md animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+          <div className="w-8 h-8 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+        </div>
+
+        {/* Fake Dashboard Content Stream Block */}
+        <div className="flex-1 px-4 pt-6 flex flex-col gap-4 overflow-hidden">
+          {/* Main Hero Promo Placeholder */}
+          <div className="w-full h-32 rounded-2xl animate-pulse" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }} />
+          
+          {/* Grid or Stacked Box Row Modules */}
+          <div className="h-4 w-1/3 rounded mt-2 animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+          <div className="w-full h-20 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }} />
+          <div className="w-full h-20 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }} />
+          <div className="w-full h-20 rounded-xl animate-pulse" style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }} />
+        </div>
+
+        {/* Statically Anchored Fake AppTabs Bar */}
+        <div 
+          className="w-full flex items-center justify-around px-2 border-t"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            borderColor: 'var(--color-border)',
+            paddingBottom: 'env(safe-area-inset-bottom, 12px)',
+            paddingTop: '8px',
+            height: 'calc(60px + env(safe-area-inset-bottom, 0px))',
+          }}
+        >
+          <div className="flex flex-col items-center gap-1.5 flex-1 py-1">
+            <div className="w-5 h-5 rounded-md animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+            <div className="w-8 h-2 rounded animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+          </div>
+          <div className="flex flex-col items-center gap-1.5 flex-1 py-1">
+            <div className="w-5 h-5 rounded-md animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+            <div className="w-8 h-2 rounded animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+          </div>
+          <div className="flex flex-col items-center gap-1.5 flex-1 py-1">
+            <div className="w-5 h-5 rounded-md animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+            <div className="w-8 h-2 rounded animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+          </div>
+          <div className="flex flex-col items-center gap-1.5 flex-1 py-1">
+            <div className="w-5 h-5 rounded-md animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+            <div className="w-8 h-2 rounded animate-pulse" style={{ backgroundColor: 'var(--color-border)' }} />
+          </div>
+        </div>
+
+      </div>
     );
   }
 
@@ -101,7 +136,7 @@ export default function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/notifications" element={<ComingSoon label="Notifications" />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
         
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
         <Route path="*" element={<Navigate to={user ? (isProfileComplete ? "/home" : "/setup") : "/onboarding"} replace />} />
