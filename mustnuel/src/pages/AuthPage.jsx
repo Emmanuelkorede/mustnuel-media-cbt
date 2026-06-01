@@ -1,3 +1,6 @@
+// =============================================================================
+// src/pages/AuthPage.jsx
+// =============================================================================
 import { useNavigate } from 'react-router';
 import { useState } from 'react';
 import { FiChevronLeft } from 'react-icons/fi';
@@ -35,13 +38,16 @@ function Field({ label, type = 'text', value, onChange, placeholder, autoComplet
 
 export default function AuthPage({ initialMode = 'signin' }) {
   const navigate = useNavigate();
-  const { signIn, signUp, signInWithGoogle, authError, isLoading } = useAuth();
+  const { signIn, signUp, signInWithGoogle, authError, isLoading: isGlobalLoading } = useAuth();
 
   const [mode, setMode] = useState(initialMode);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [localError, setLocalError] = useState('');
+  
+  // FIX: Dedicated local state to manage the lifecycle of form submissions
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const isSignUp = mode === 'signup';
 
@@ -62,17 +68,32 @@ export default function AuthPage({ initialMode = 'signin' }) {
     const err = validate();
     if (err) { setLocalError(err); return; }
     setLocalError('');
+    setIsSubmitting(true); // Start loading state locally
 
-    if (isSignUp) {
-      const r = await signUp({ email, password });
-      if (r.success) navigate('/setup');
-    } else {
-      const r = await signIn({ email, password });
-      if (r.success) navigate('/home');
+    try {
+      if (isSignUp) {
+        const r = await signUp({ email, password });
+        if (r.success) {
+          navigate('/setup');
+          return;
+        }
+      } else {
+        const r = await signIn({ email, password });
+        if (r.success) {
+          navigate('/home');
+          return;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      // Turn off loading state if submission fails or errors out
+      setIsSubmitting(false);
     }
   };
 
   const displayError = localError || authError;
+  const isInteractionDisabled = isGlobalLoading || isSubmitting;
 
   return (
     <div
@@ -83,7 +104,8 @@ export default function AuthPage({ initialMode = 'signin' }) {
       <div className="px-5 pt-12 pb-8 flex flex-col gap-6 shrink-0">
         <button
           onClick={() => navigate('/onboarding')}
-          className="flex items-center gap-1.5 w-fit text-sm font-medium transition-transform duration-200 active:scale-95 cursor-pointer"
+          disabled={isInteractionDisabled}
+          className="flex items-center gap-1.5 w-fit text-sm font-medium transition-transform duration-200 active:scale-95 cursor-pointer disabled:opacity-50"
           style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-body)' }}
         >
           <FiChevronLeft size={18} />
@@ -111,7 +133,7 @@ export default function AuthPage({ initialMode = 'signin' }) {
         {/* Google */}
         <button
           onClick={() => signInWithGoogle()}
-          disabled={isLoading}
+          disabled={isInteractionDisabled}
           className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl border text-sm font-bold transition-all duration-200 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-sm hover:bg-slate-50"
           style={{
             fontFamily: 'var(--font-body)',
@@ -148,16 +170,16 @@ export default function AuthPage({ initialMode = 'signin' }) {
           </p>
         )}
 
-        {/* Submit */}
+        {/* Submit Button */}
         <button
           onClick={handleSubmit}
-          disabled={isLoading}
-          className="w-full py-4 mt-2 rounded-2xl text-sm font-bold text-white transition-all duration-200 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md"
+          disabled={isInteractionDisabled}
+          className="w-full py-4 mt-2 rounded-2xl text-sm font-bold text-white transition-all duration-200 active:scale-[0.99] disabled:opacity-50 cursor-pointer shadow-md flex items-center justify-center"
           style={{ fontFamily: 'var(--font-display)', backgroundColor: 'var(--color-primary)' }}
-          onMouseEnter={e => e.target.style.backgroundColor = 'var(--color-primary-hover)'}
-          onMouseLeave={e => e.target.style.backgroundColor = 'var(--color-primary)'}
+          onMouseEnter={e => !isInteractionDisabled && (e.target.style.backgroundColor = 'var(--color-primary-hover)')}
+          onMouseLeave={e => !isInteractionDisabled && (e.target.style.backgroundColor = 'var(--color-primary)')}
         >
-          {isLoading
+          {isSubmitting
             ? (isSignUp ? 'Creating account…' : 'Signing in…')
             : (isSignUp ? 'Create Account' : 'Sign In')}
         </button>
@@ -167,7 +189,8 @@ export default function AuthPage({ initialMode = 'signin' }) {
           {isSignUp ? 'Already have an account? ' : "Don't have an account? "}
           <button
             onClick={() => switchMode(isSignUp ? 'signin' : 'signup')}
-            className="font-bold transition-colors cursor-pointer"
+            disabled={isInteractionDisabled}
+            className="font-bold transition-colors cursor-pointer disabled:opacity-50"
             style={{ color: 'var(--color-primary)' }}
           >
             {isSignUp ? 'Sign In' : 'Create one'}

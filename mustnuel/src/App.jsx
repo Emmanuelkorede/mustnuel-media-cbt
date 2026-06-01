@@ -17,6 +17,7 @@ import AnalyticsPage from './pages/AnalyticsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/notifications';
+import PremiumPage from './pages/PremiunPage';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -137,7 +138,8 @@ export default function App() {
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
-        
+        <Route path="/premium" element={<PremiumPage />} />
+
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
         <Route path="*" element={<Navigate to={user ? (isProfileComplete ? "/home" : "/setup") : "/onboarding"} replace />} />
       </Routes>
