@@ -172,9 +172,9 @@ export default function LeaderboardPage({ onNavigate }) {
   return (
     <div className="fixed inset-0 flex flex-col bg-canvas select-none">
       
-      {/* Top Header Section */}
+{/* Top Header Section */}
       <header className="bg-surface border-b border-border pt-4 shrink-0">
-        <div className="px-5 pb-3 flex items-center justify-between">
+        <div className="px-5 pb-3.5 flex items-center justify-between">
           <h1 className="text-xl font-black tracking-tight text-text-primary" style={{ fontFamily: 'var(--font-display)' }}>
             Leaderboard
           </h1>
@@ -184,46 +184,49 @@ export default function LeaderboardPage({ onNavigate }) {
           </div>
         </div>
 
-        {/* Timeframe Slider Filters */}
-        <div className="flex px-5 pb-3.5 gap-2">
-          {TIMEFRAMES.map((t) => {
-            const active = selectedTimeframe === t.id;
-            return (
-              <button
-                key={t.id}
-                onClick={() => setSelectedTimeframe(t.id)}
-                className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-                  active 
-                    ? 'bg-text-primary border-text-primary text-surface' 
-                    : 'bg-surface border-border text-text-secondary'
-                }`}
-                style={{ fontFamily: 'var(--font-body)' }}
-              >
-                {t.label}
-              </button>
-            );
-          })}
-        </div>
+        {/* Dual Side-by-Side Dropdowns Filter Bar */}
+        <div className="flex gap-3 px-5 pb-4">
+          {/* Timeframe Selection Dropdown */}
+          <div className="flex-1 relative">
+            <select
+              value={selectedTimeframe}
+              onChange={(e) => setSelectedTimeframe(e.target.value)}
+              className="w-full bg-surface-2 text-text-primary border border-border rounded-xl px-3.5 py-2.5 text-xs font-bold appearance-none cursor-pointer focus:outline-none focus:border-primary transition-colors"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
+              {TIMEFRAMES.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.label}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none text-text-muted">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
 
-        {/* Institution Grid Filter Hub */}
-        <div className="flex gap-2 px-5 py-2.5 bg-surface-2 border-t border-border overflow-x-auto scrollbar-none">
-          {SCHOOLS.map((s) => {
-            const active = selectedSchool === s.id;
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSelectedSchool(s.id)}
-                className={`px-4 py-1.5 rounded-full border text-xs font-bold whitespace-nowrap transition-colors ${
-                  active
-                    ? 'bg-primary border-primary text-white shadow-sm'
-                    : 'bg-surface border-border text-text-secondary hover:bg-surface-2'
-                }`}
-                style={{ fontFamily: 'var(--font-display)' }}
-              >
-                {s.label}
-              </button>
-            );
-          })}
+          {/* School Selection Dropdown */}
+          <div className="flex-1 relative">
+            <select
+              value={selectedSchool}
+              onChange={(e) => setSelectedSchool(e.target.value)}
+              className="w-full bg-surface-2 text-text-primary border border-border rounded-xl px-3.5 py-2.5 text-xs font-bold appearance-none cursor-pointer focus:outline-none focus:border-primary transition-colors"
+              style={{ fontFamily: 'var(--font-body)' }}
+            >
+              {SCHOOLS.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+            <div className="absolute inset-y-0 right-3.5 flex items-center pointer-events-none text-text-muted">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M6 9l6 6 6-6"/>
+              </svg>
+            </div>
+          </div>
         </div>
       </header>
 

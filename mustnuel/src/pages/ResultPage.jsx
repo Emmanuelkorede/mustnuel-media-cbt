@@ -119,7 +119,7 @@ const REVIEW_FILTERS = ['All', 'Wrong', 'Skipped'];
 
 function ReviewTab({ questions = [], answers = {} }) {
   const { setIsUpgradeModalOpen } = useApp();
-  const { isActivated } = useProfile(); // 👈 Pulling global verified premium status from your hook profile
+  const { isActivated } = useProfile();
   const [filter, setFilter] = useState('All');
   const [expandedId, setExpandedId] = useState(null);
 
@@ -156,7 +156,7 @@ function ReviewTab({ questions = [], answers = {} }) {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl border text-xs font-semibold transition-colors cursor-pointer
                 ${active ? 'bg-primary border-primary text-white' : 'bg-surface border-border text-text-secondary'}
               `}
               style={{ fontFamily: 'var(--font-body)' }}
@@ -183,48 +183,56 @@ function ReviewTab({ questions = [], answers = {} }) {
           </p>
         </div>
       ) : (
-        filteredQuestions.map((q, idx) => {
+        filteredQuestions.map((q) => {
           const isExpanded = expandedId === q.id;
           const userAnswer = answers[q.id];
           const isSkipped = !userAnswer;
           const isCorrect = userAnswer === q.correct_option;
 
-          let statusBadge = <Badge variant="error">Wrong</Badge>;
-          if (isSkipped) statusBadge = <Badge variant="warning">Skipped</Badge>;
-          if (isCorrect) statusBadge = <Badge variant="success">Correct</Badge>;
-
           return (
             <div key={q.id} className="rounded-2xl border border-border bg-surface overflow-hidden">
-              <button
-                onClick={() => setExpandedId(isExpanded ? null : q.id)}
-                className="w-full flex items-start gap-3 px-4 py-4 text-left"
-              >
-                <span
-                  className="shrink-0 text-xs font-bold font-mono px-2 py-1 rounded-lg mt-0.5 bg-surface-2 text-text-muted"
-                >
+              {/* Question Text Left Intact */}
+              <div className="flex items-start gap-3 px-4 pt-4 pb-1">
+                <span className="shrink-0 text-xs font-bold font-mono px-2 py-1 rounded-lg mt-0.5 bg-surface-2 text-text-muted">
                   Q{questions.indexOf(q) + 1}
                 </span>
 
-                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                  <div className="text-sm text-text-primary leading-snug line-clamp-2">
-                    <QuestionRenderer text={q.question_text} inline />
-                  </div>
-                  <div>{statusBadge}</div>
+                <div className="flex-1 text-sm text-text-primary leading-snug">
+                  <QuestionRenderer text={q.question_text} inline />
+                </div>
+              </div>
+
+              {/* Separated Badge and View Correction Toggle Button */}
+              <div className="px-4 pb-3 pt-1 flex items-center gap-3">
+                {/* Status Label Badge Only */}
+                <div>
+                  {isSkipped && <Badge variant="warning">Skipped</Badge>}
+                  {!isSkipped && !isCorrect && <Badge variant="error">Wrong</Badge>}
+                  {!isSkipped && isCorrect && <Badge variant="success">Correct</Badge>}
                 </div>
 
-                <svg
-                  width="14" height="14" viewBox="0 0 24 24" fill="none"
-                  stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                  className="shrink-0 mt-1 text-text-muted transition-transform"
-                  style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+                {/* Completely Separate Trigger Button with "View Correction" Text */}
+                <button
+                  onClick={() => setExpandedId(isExpanded ? null : q.id)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-2 hover:bg-border/40 transition-colors text-xs font-bold text-text-secondary cursor-pointer border border-border/50 active:scale-95"
                 >
-                  <path d="M6 9l6 6 6-6"/>
-                </svg>
-              </button>
+                  <span>View Correction</span>
+                  <svg
+                    width="10" height="10" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
+                    className="text-text-muted transition-transform duration-150"
+                    style={{ transform: isExpanded ? 'rotate(180deg)' : 'none' }}
+                  >
+                    <path d="M6 9l6 6 6-6"/>
+                  </svg>
+                </button>
+              </div>
 
+              {/* HEAVILY SHRUNK Options & Explanation Dropdown Display */}
               {isExpanded && (
-                <div className="px-4 pb-4 flex flex-col gap-3 border-t border-border animate-in fade-in duration-200">
-                  <div className="pt-3 flex flex-col gap-2.5">
+                <div className="px-4 pb-3 flex flex-col gap-1.5 border-t border-border bg-canvas/10 animate-in fade-in duration-100">
+                  {/* Heavily Shrunk Option Blocks & Shrunk Option Text */}
+                  <div className="pt-2 flex flex-col gap-1">
                     {OPTION_MAPPING.map(({ letter, field }) => {
                       const isUserSelection = userAnswer === letter;
                       const isCorrectOption = q.correct_option === letter;
@@ -243,18 +251,18 @@ function ReviewTab({ questions = [], answers = {} }) {
                           variant={buttonVariant}
                           fullWidth
                           disabled
-                          className="text-left cursor-default opacity-100"
+                          className="text-left cursor-default opacity-100 !py-1 !px-2.5 !rounded-md"
                         >
-                          <div className="flex items-start gap-4 text-left w-full">
+                          <div className="flex items-center gap-2 w-full">
                             <span className={`
-                              w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 border
+                              w-4 h-4 rounded text-[9px] font-bold flex items-center justify-center shrink-0 border
                               ${buttonVariant === 'option-correct' ? 'bg-green-500 text-white border-green-500' : ''}
                               ${buttonVariant === 'option-wrong' ? 'bg-red-500 text-white border-red-500' : ''}
                               ${buttonVariant === 'option-idle' ? 'bg-surface-2 text-text-secondary border-border' : ''}
                             `} style={{ fontFamily: 'var(--font-mono)' }}>
                               {isCorrectOption ? '✓' : letter}
                             </span>
-                            <div className="flex-1 pt-0.5">
+                            <div className="flex-1 text-[10px] font-medium leading-tight text-text-secondary">
                               <QuestionRenderer text={optionText} inline />
                             </div>
                           </div>
@@ -263,24 +271,26 @@ function ReviewTab({ questions = [], answers = {} }) {
                     })}
                   </div>
 
-                  {/* Explanation Section */}
+                  {/* Heavily Shrunk Explanation Box & Shrunk Text */}
                   {q.explanation && (
-                    <div className="rounded-2xl px-4 py-3.5 border border-green-500/20 bg-green-500/[0.03] relative overflow-hidden">
-                      <p className="text-xs font-bold tracking-widest text-green-500 uppercase mb-1.5" style={{ fontFamily: 'var(--font-body)' }}>
+                    <div className="rounded-md px-2.5 py-1.5 border border-green-500/10 bg-green-500/[0.01]">
+                      <p className="text-[9px] font-black tracking-wider text-green-600 uppercase mb-0.5" style={{ fontFamily: 'var(--font-body)' }}>
                         Explanation
                       </p>
                       
-                      {isActivated ? ( // 👈 Checking verified profile column status directly here
-                        <QuestionRenderer text={q.explanation} className="text-sm text-text-secondary" />
+                      {isActivated ? (
+                        <div className="text-[10px] text-text-muted leading-normal">
+                          <QuestionRenderer text={q.explanation} />
+                        </div>
                       ) : (
-                        <div className="pt-1 flex flex-col items-center text-center">
-                          <p className="text-xs text-text-muted italic mb-3">
-                            Detailed solutions and references are locked for free tier users.
+                        <div className="pt-0.5 flex flex-col items-center text-center">
+                          <p className="text-[9px] text-text-muted italic mb-1">
+                            Detailed solutions are locked for free tier accounts.
                           </p>
                           <Button 
                             variant="primary" 
                             size="sm" 
-                            className="!rounded-xl shadow-sm text-xs font-bold px-4"
+                            className="!rounded !py-0.5 !px-2 shadow-none text-[8px] font-bold"
                             onClick={() => setIsUpgradeModalOpen?.(true)}
                           >
                             🔒 Upgrade to Unlock
