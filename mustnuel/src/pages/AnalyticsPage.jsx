@@ -170,22 +170,44 @@ export default function AnalyticsPage() {
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
+useEffect(() => {
+    // 1. Guard against unauthenticated contexts early
     if (!user?.id) return;
 
-    const loadPerformanceStats = async () => {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('test_results')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('completed_at', { ascending: true });
+    let isMounted = true;
 
-      if (!error && data) setSessions(data);
-      setIsLoading(false);
+    const loadPerformanceStats = async () => {
+      // 2. Clear old state and force spinner on fresh entry
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('test_results')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('completed_at', { ascending: true });
+
+        // 3. Drop processing updates cleanly if page was unmounted midway
+        if (!isMounted) return;
+
+        if (!error && data) {
+          setSessions(data);
+        }
+      } catch (err) {
+        console.error('Analytics Performance Query Failed:', err.message);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
     };
 
     loadPerformanceStats();
+
+    // 4. Clean up subscriptions to drop trailing memory leaks
+    return () => {
+      isMounted = false;
+    };
+    // Explicit user.id tracking fixes the component caching lock out bug
   }, [user?.id]);
 
   // Computed aggregate score parameters

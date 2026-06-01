@@ -15,6 +15,7 @@ import CBTSessionPage from './pages/CBTSessionPage';
 import ResultPage from './pages/ResultPage';
 import AnalyticsPage from './pages/AnalyticsPage';
 import LeaderboardPage from './pages/LeaderboardPage';
+import ProfilePage from './pages/ProfilePage';
 
 function ComingSoon({ label }) {
   return (
@@ -99,7 +100,7 @@ export default function App() {
         <Route path="/result" element={<ResultPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
-        <Route path="/profile" element={<ComingSoon label="Profile" />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<ComingSoon label="Notifications" />} />
         
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}

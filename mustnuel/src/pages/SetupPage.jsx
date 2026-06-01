@@ -5,9 +5,9 @@ import { useProfile } from '../hooks/useProfile';
 import { SCHOOLS } from '../context/AppContext';
 
 const SCHOOL_META = {
-  UI:     { name: 'University of Ibadan',        location: 'Ibadan, Oyo State' },
-  UNILAG: { name: 'University of Lagos',          location: 'Lagos, Lagos State' },
-  OAU:    { name: 'Obafemi Awolowo University',    location: 'Ile-Ife, Osun State' },
+  UI:     { name: 'University of Ibadan',        location: 'Ibadan, Oyo State',    logoUrl: '/ui_logo.png' },
+  UNILAG: { name: 'University of Lagos',          location: 'Lagos, Lagos State',   logoUrl: '/unilag-logo.png' },
+  OAU:    { name: 'Obafemi Awolowo University',    location: 'Ile-Ife, Osun State',  logoUrl: '/oau-logo.jpg' },
 };
 
 const TRACK_OPTIONS = [
@@ -118,12 +118,21 @@ function StepSchool({ value, onChange }) {
               }}
             >
               <div className="flex items-center gap-3 min-w-0">
-                {/* School Image Placeholder Box */}
+                {/* Fixed Image Wrapper Container Block */}
                 <div 
-                  className="w-12 h-12 rounded-xl shrink-0 border overflow-hidden bg-[--color-canvas] flex items-center justify-center text-xs font-bold"
-                  style={{ borderColor: 'var(--color-border)', color: 'var(--color-text-muted)' }}
+                  className="w-12 h-12 rounded-xl shrink-0 border overflow-hidden bg-[--color-canvas] flex items-center justify-center"
+                  style={{ borderColor: 'var(--color-border)' }}
                 >
-                  {id}
+                  <img 
+                    src={meta.logoUrl} 
+                    alt={`${id} Logo`} 
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      // Text fallback security rule if the asset gets deleted from the public folder
+                      e.target.style.display = 'none';
+                      e.target.parentNode.innerText = id;
+                    }}
+                  />
                 </div>
                 
                 <div className="min-w-0">
