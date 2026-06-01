@@ -1,4 +1,7 @@
-import { useState, useMemo, useEffect } from 'react';
+// =============================================================================
+// src/pages/CBTSessionPage.jsx
+// =============================================================================
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useTestSession } from '../hooks/useTestSession';
 import { useApp } from '../context/AppContext';
@@ -41,11 +44,16 @@ export default function CBTSessionPage() {
   const [isSubmitOpen, setIsSubmitOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // FIX 1: Safely lock the launch mechanism behind a ref so it strictly fires ONCE.
+  // This completely stops the timer ticks from triggering rogue re-fetches.
+  const hasLaunched = useRef(false);
+
   useEffect(() => {
-    if (location.state?.sessionConfig) {
+    if (location.state?.sessionConfig && !hasLaunched.current) {
+      hasLaunched.current = true;
       session.launch(location.state.sessionConfig);
     }
-  }, [location.state]);
+  }, [location.state?.sessionConfig, session]);
 
   const isStudyMode = config?.mode === PRACTICE_MODES.STUDY;
 
@@ -64,17 +72,23 @@ export default function CBTSessionPage() {
     return questions.filter((q) => q.subject === activeSubject);
   }, [questions, activeSubject]);
 
-  const activeSubjectIndex = useMemo(() => {
-    if (questions.length === 0 || !questions[currentIndex]) return 0;
+  // FIX 2: Extracted the active subject synchronization OUT of the useMemo calculation
+  // and into a safe, controlled useEffect pipeline to prevent render crashing.
+  useEffect(() => {
+    if (questions.length === 0 || !questions[currentIndex]) return;
     const globalQuestion = questions[currentIndex];
     
     if (globalQuestion.subject !== activeSubject && subjects.includes(globalQuestion.subject)) {
       setActiveSubject(globalQuestion.subject);
     }
+  }, [currentIndex, questions, activeSubject, subjects]);
 
+  const activeSubjectIndex = useMemo(() => {
+    if (questions.length === 0 || !questions[currentIndex]) return 0;
+    const globalQuestion = questions[currentIndex];
     const idx = filteredQuestions.findIndex((q) => q.id === globalQuestion.id);
     return idx !== -1 ? idx : 0;
-  }, [currentIndex, questions, filteredQuestions, activeSubject, subjects]);
+  }, [currentIndex, questions, filteredQuestions]);
 
   const currentQuestion = filteredQuestions[activeSubjectIndex];
   const hasQuestions = questions.length > 0 && currentQuestion;
@@ -114,8 +128,6 @@ export default function CBTSessionPage() {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
   };
 
-  // FIXED: Compare hook config directly to location state config. 
-  // If they don't match yet, lock the screen into the loading state to block old metrics from rendering.
   const targetConfigMatches = config && location.state?.sessionConfig && 
     config.school === location.state.sessionConfig.school &&
     config.limit === location.state.sessionConfig.limit &&
@@ -132,7 +144,7 @@ export default function CBTSessionPage() {
     );
   }
 
-return (
+  return (
     <div className="h-screen w-screen bg-canvas flex flex-col text-text-primary select-none overflow-hidden">
       
       {/* Top Navigation Header */}
