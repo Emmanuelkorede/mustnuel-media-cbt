@@ -14,6 +14,7 @@ import UpgradeModal from './components/ui/UpgradeModal';
 import CBTSessionPage from './pages/CBTSessionPage';
 import ResultPage from './pages/ResultPage';
 import AnalyticsPage from './pages/AnalyticsPage';
+import LeaderboardPage from './pages/LeaderboardPage';
 
 function ComingSoon({ label }) {
   return (
@@ -97,6 +98,7 @@ export default function App() {
         <Route path="/cbt-session" element={<CBTSessionPage />} />
         <Route path="/result" element={<ResultPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ComingSoon label="Profile" />} />
         <Route path="/notifications" element={<ComingSoon label="Notifications" />} />
         

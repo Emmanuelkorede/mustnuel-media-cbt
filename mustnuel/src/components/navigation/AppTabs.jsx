@@ -1,12 +1,4 @@
-// =============================================================================
-// src/components/navigation/AppTabs.jsx
-// -----------------------------------------------------------------------------
-// Sticky bottom tab bar. Four tabs: Home, Practice, Analytics, Profile.
-// Rendered inside the main app shell — NOT shown on auth/onboarding screens.
-//
-// Props:
-//   active     — current tab id: 'home' | 'practice' | 'analytics' | 'profile'
-// =============================================================================
+
 
 import { useNavigate } from 'react-router';
 import { motion } from 'framer-motion';
@@ -44,8 +36,8 @@ const TABS = [
     ),
   },
   {
-    id:    'analytics',
-    label: 'Analytics',
+    id:    'leaderboard',
+    label: 'leaderboard',
     icon:  (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
         stroke="currentColor" strokeWidth="1.8"

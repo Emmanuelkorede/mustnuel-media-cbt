@@ -1,348 +1,280 @@
-// =============================================================================
-// src/pages/LeaderboardPage.jsx
-// =============================================================================
-// Weekly school leaderboard. Reads from public.weekly_winners.
-// Filtered by the user's target school by default.
-// School switcher at the top lets them browse other schools.
-// =============================================================================
-
 import { useState, useEffect } from 'react';
-import { supabase }   from '../lib/supabaseClient';
-import { useProfile } from '../hooks/useProfile';
-import Header         from '../components/navigation/Header';
-import AppTabs        from '../components/navigation/AppTabs';
-import Spinner        from '../components/ui/Spinner';
-import Badge          from '../components/ui/Badge';
+import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
+import AppTabs from '../components/navigation/AppTabs';
 
-const SCHOOLS = ['UI', 'UNILAG', 'OAU'];
+const SCHOOLS = [
+  { id: 'ALL', label: 'All Schools' },
+  { id: 'UI', label: 'UI' },
+  { id: 'UNILAG', label: 'UNILAG' },
+  { id: 'OAU', label: 'OAU' }
+];
 
-// ISO Monday of the current week
-function getThisWeekMonday() {
-  const d   = new Date();
-  const day = d.getDay(); // 0=Sun
-  const diff = (day === 0 ? -6 : 1 - day);
-  d.setDate(d.getDate() + diff);
-  return d.toISOString().split('T')[0];
-}
-
-// Podium medal by rank
-function medal(rank) {
-  if (rank === 1) return '🥇';
-  if (rank === 2) return '🥈';
-  if (rank === 3) return '🥉';
-  return null;
-}
+const TIMEFRAMES = [
+  { id: 'week', label: 'This Week' },
+  { id: 'month', label: 'This Month' },
+  { id: 'all', label: 'All Time' }
+];
 
 // ---------------------------------------------------------------------------
-// Podium — top 3
+// Medal / Rank Badge Picker
 // ---------------------------------------------------------------------------
-function Podium({ top3, currentUserId }) {
-  if (top3.length === 0) return null;
-
-  const order = [top3[1], top3[0], top3[2]].filter(Boolean); // 2nd, 1st, 3rd
-  const heights = ['h-20', 'h-28', 'h-16'];
-  const rankOrder = [2, 1, 3];
-
+function RankBadge({ rank }) {
+  if (rank === 1) return <span className="text-xl shrink-0">🥇</span>;
+  if (rank === 2) return <span className="text-xl shrink-0">🥈</span>;
+  if (rank === 3) return <span className="text-xl shrink-0">🥉</span>;
+  
   return (
-    <div className="flex items-end justify-center gap-2 pt-4 pb-2">
-      {order.map((entry, i) => {
-        const isMe = entry?.user_id === currentUserId;
-        return (
-          <div key={entry?.id ?? i} className="flex flex-col items-center gap-2 flex-1 max-w-[100px]">
-            {/* Avatar circle */}
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center text-base font-black border-2"
-              style={{
-                backgroundColor: isMe ? 'var(--color-primary)' : 'var(--color-surface-2)',
-                borderColor:     isMe ? 'var(--color-primary)' : 'var(--color-border)',
-                fontFamily:      'var(--font-display)',
-                color:           isMe ? '#ffffff' : 'var(--color-text-primary)',
-              }}
-            >
-              {(entry?.display_name ?? '?')[0].toUpperCase()}
-            </div>
-
-            {/* Name */}
-            <p
-              className="text-xs font-semibold text-center truncate w-full px-1"
-              style={{
-                fontFamily: 'var(--font-body)',
-                color: isMe ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              }}
-            >
-              {isMe ? 'You' : (entry?.display_name ?? 'Unknown')}
-            </p>
-
-            {/* Podium block */}
-            <div
-              className={`w-full ${heights[i]} rounded-t-2xl flex items-start justify-center pt-2`}
-              style={{
-                backgroundColor: rankOrder[i] === 1
-                  ? 'var(--color-primary)'
-                  : 'var(--color-surface)',
-                border: '1px solid var(--color-border)',
-              }}
-            >
-              <span className="text-lg">{medal(rankOrder[i])}</span>
-            </div>
-
-            {/* Score */}
-            <p
-              className="text-xs font-bold"
-              style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}
-            >
-              {entry?.score_percent?.toFixed(1)}%
-            </p>
-          </div>
-        );
-      })}
-    </div>
+    <p 
+      className="text-xs font-bold text-text-muted text-center w-6 shrink-0" 
+      style={{ fontFamily: 'var(--font-mono)' }}
+    >
+      #{rank}
+    </p>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Rank row
+// Individual Rank Row Component
 // ---------------------------------------------------------------------------
-function RankRow({ entry, currentUserId, rank }) {
+function RankRow({ entry, currentUserId, isSticky = false }) {
   const isMe = entry.user_id === currentUserId;
 
   return (
     <div
-      className="flex items-center gap-3 px-4 py-3.5 rounded-2xl"
-      style={{
-        backgroundColor: isMe ? 'var(--color-primary-subtle)' : 'var(--color-surface)',
-        border: `1px solid ${isMe ? 'var(--color-primary)' : 'var(--color-border)'}`,
-      }}
+      className={`flex items-center gap-3 px-4 py-3.5 rounded-2xl border transition-all ${
+        isMe 
+          ? 'bg-primary/5 border-primary shadow-sm' 
+          : 'bg-surface border-border'
+      }`}
     >
-      {/* Rank */}
-      <div className="w-8 flex items-center justify-center shrink-0">
-        {medal(rank) ? (
-          <span className="text-lg">{medal(rank)}</span>
-        ) : (
-          <p
-            className="text-sm font-bold"
-            style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}
-          >
-            #{rank}
-          </p>
-        )}
+      {/* Rank Column */}
+      <div className="w-6 flex items-center justify-center shrink-0">
+        <RankBadge rank={entry.rank_position} />
       </div>
 
-      {/* Avatar */}
+      {/* Avatar Circle with Initial */}
       <div
-        className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 font-bold text-sm"
-        style={{
-          backgroundColor: isMe ? 'var(--color-primary)' : 'var(--color-surface-2)',
-          color:           isMe ? '#ffffff' : 'var(--color-text-primary)',
-          fontFamily:      'var(--font-display)',
-        }}
+        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 font-bold text-sm border ${
+          isMe 
+            ? 'bg-primary text-white border-primary' 
+            : 'bg-surface-2 text-text-primary border-border'
+        }`}
+        style={{ fontFamily: 'var(--font-display)' }}
       >
-        {(entry.display_name ?? '?')[0].toUpperCase()}
+        {(entry.display_name ?? 'U')[0].toUpperCase()}
       </div>
 
-      {/* Name */}
-      <p
-        className="flex-1 text-sm font-semibold truncate"
-        style={{
-          fontFamily: 'var(--font-body)',
-          color: isMe ? 'var(--color-primary)' : 'var(--color-text-primary)',
-        }}
-      >
-        {isMe ? 'You' : (entry.display_name ?? 'Unknown')}
-      </p>
+      {/* Student Meta Details */}
+      <div className="flex-1 min-w-0">
+        <p
+          className={`text-sm font-semibold truncate ${
+            isMe ? 'text-primary' : 'text-text-primary'
+          }`}
+          style={{ fontFamily: 'var(--font-body)' }}
+        >
+          {isMe ? 'You' : entry.display_name}
+        </p>
+        <p className="text-xs text-text-muted lowercase mt-0.5" style={{ fontFamily: 'var(--font-body)' }}>
+          Targeting <span className="uppercase font-medium text-text-secondary">{entry.school}</span>
+        </p>
+      </div>
 
-      {/* Score */}
-      <p
-        className="text-sm font-black shrink-0"
-        style={{
-          fontFamily: 'var(--font-mono)',
-          color: isMe ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-        }}
-      >
-        {entry.score_percent?.toFixed(1)}%
-      </p>
+      {/* Stats Block Container */}
+      <div className="flex items-center gap-2 shrink-0">
+        {/* Exams Taken Pill */}
+        <div className="bg-surface-2 border border-border rounded-lg px-2 py-1 text-center shrink-0">
+          <p className="text-[10px] font-bold text-text-secondary leading-none">
+            {entry.total_exams}
+          </p>
+          <p className="text-[8px] text-text-muted uppercase tracking-wider font-semibold mt-0.5">
+            {entry.total_exams === 1 ? 'Exam' : 'Exams'}
+          </p>
+        </div>
+
+        {/* Highest Score Parameter */}
+        <div className="w-14 text-right">
+          <p
+            className={`text-sm font-black leading-none ${
+              isMe ? 'text-primary' : 'text-text-primary'
+            }`}
+            style={{ fontFamily: 'var(--font-mono)' }}
+          >
+            {Math.round(entry.highest_score)}%
+          </p>
+          <p className="text-[9px] text-text-muted font-medium mt-0.5" style={{ fontFamily: 'var(--font-body)' }}>
+            peak score
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
-function EmptyState({ school }) {
-  return (
-    <div
-      className="flex flex-col items-center gap-3 py-16 rounded-3xl"
-      style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}
-    >
-      <span className="text-4xl">🏆</span>
-      <p
-        className="text-sm font-semibold"
-        style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)' }}
-      >
-        No rankings yet for {school}
-      </p>
-      <p
-        className="text-xs text-center max-w-xs"
-        style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}
-      >
-        Complete a session this week to appear on the leaderboard.
-      </p>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main
+// Main Page View Component
 // ---------------------------------------------------------------------------
 export default function LeaderboardPage({ onNavigate }) {
-  const { user, targetSchool } = useProfile();
+  const { user } = useAuth();
 
-  const [school,    setSchool]    = useState(targetSchool ?? SCHOOLS[0]);
-  const [entries,   setEntries]   = useState([]);
+  const [selectedSchool, setSelectedSchool] = useState('ALL');
+  const [selectedTimeframe, setSelectedTimeframe] = useState('week');
+  const [leaderboardRows, setLeaderboardRows] = useState([]);
+  const [myRowPosition, setMyRowPosition] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const weekStart  = getThisWeekMonday();
-
   useEffect(() => {
-    const load = async () => {
+    const fetchRealtimeRankings = async () => {
       setIsLoading(true);
-      setEntries([]);
+      try {
+        // Execute Stored RPC Query on live test_results table
+        const { data, error } = await supabase.rpc('get_leaderboard', {
+          p_school: selectedSchool,
+          p_timeframe: selectedTimeframe
+        });
 
-      const { data, error } = await supabase
-        .from('weekly_winners')
-        .select('*, profiles(display_name)')
-        .eq('school', school)
-        .eq('week_start', weekStart)
-        .order('rank_position', { ascending: true })
-        .limit(50);
+        if (error) throw error;
 
-      if (!error && data) {
-        // Flatten display_name from joined profiles row
-        setEntries(
-          data.map((row) => ({
+        if (data) {
+          // Find if logged-in user exists anywhere inside the response dataset
+          const userIndex = data.findIndex((row) => row.user_id === user?.id);
+          
+          if (userIndex !== -1) {
+            setMyRowPosition({
+              ...data[userIndex],
+              rank_position: data[userIndex].rank_position
+            });
+          } else {
+            setMyRowPosition(null);
+          }
+
+          // Format full listings bounded up to top 15 ranks
+          const top15Listings = data.slice(0, 15).map((row) => ({
             ...row,
-            display_name: row.profiles?.display_name ?? 'Unknown',
-          }))
-        );
-      }
+            rank_position: row.rank_position
+          }));
 
-      setIsLoading(false);
+          setLeaderboardRows(top15Listings);
+        }
+      } catch (err) {
+        console.error('Leaderboard Fetch Execution Failed:', err.message);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    load();
-  }, [school, weekStart]);
+    fetchRealtimeRankings();
+  }, [selectedSchool, selectedTimeframe, user?.id]);
 
-  const top3 = entries.slice(0, 3);
-  const rest = entries.slice(3);
-
-  // Find the current user's position
-  const myEntry = entries.find((e) => e.user_id === user?.id);
+  // Determine if user is positioned cleanly outside the visible top 15 rows
+  const isUserOutsideTop15 = myRowPosition && myRowPosition.rank_position > 15;
 
   return (
-    <div
-      className="fixed inset-0 flex flex-col"
-      style={{ backgroundColor: 'var(--color-canvas)' }}
-    >
-      <Header title="Leaderboard" showLogo />
-
-      {/* School switcher */}
-      <div
-        className="flex gap-2 px-5 py-3 shrink-0 border-b"
-        style={{ borderColor: 'var(--color-border)' }}
-      >
-        {SCHOOLS.map((s) => {
-          const active = school === s;
-          return (
-            <button
-              key={s}
-              onClick={() => setSchool(s)}
-              className="flex-1 py-2.5 rounded-xl border text-xs font-bold transition-colors"
-              style={{
-                fontFamily:      'var(--font-display)',
-                backgroundColor: active ? 'var(--color-primary)' : 'var(--color-surface)',
-                borderColor:     active ? 'var(--color-primary)' : 'var(--color-border)',
-                color:           active ? '#ffffff'              : 'var(--color-text-secondary)',
-              }}
-            >
-              {s}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Week label */}
-      <div className="px-5 pt-4 pb-2 shrink-0 flex items-center justify-between">
-        <p
-          className="text-xs font-semibold uppercase"
-          style={{
-            fontFamily:    'var(--font-body)',
-            color:         'var(--color-text-muted)',
-            letterSpacing: '0.1em',
-          }}
-        >
-          This Week
-        </p>
-        {myEntry && (
-          <Badge variant="primary">Your rank: #{myEntry.rank_position}</Badge>
-        )}
-      </div>
-
-      {/* Scrollable content */}
-      <div
-        className="flex-1 overflow-y-auto px-5 pb-5 flex flex-col gap-4"
-        style={{ paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))' }}
-      >
-        {isLoading ? (
-          <div className="flex justify-center py-20">
-            <Spinner size="lg" />
+    <div className="fixed inset-0 flex flex-col bg-canvas select-none">
+      
+      {/* Top Header Section */}
+      <header className="bg-surface border-b border-border pt-4 shrink-0">
+        <div className="px-5 pb-3 flex items-center justify-between">
+          <h1 className="text-xl font-black tracking-tight text-text-primary" style={{ fontFamily: 'var(--font-display)' }}>
+            Leaderboard
+          </h1>
+          <div className="bg-primary/10 rounded-full px-3 py-1 flex items-center gap-1">
+            <span className="text-xs">⚡</span>
+            <span className="text-[11px] font-bold text-primary uppercase tracking-wider">Live ranks</span>
           </div>
-        ) : entries.length === 0 ? (
-          <EmptyState school={school} />
+        </div>
+
+        {/* Timeframe Slider Filters */}
+        <div className="flex px-5 pb-3.5 gap-2">
+          {TIMEFRAMES.map((t) => {
+            const active = selectedTimeframe === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => setSelectedTimeframe(t.id)}
+                className={`flex-1 py-1.5 rounded-lg border text-xs font-bold transition-all ${
+                  active 
+                    ? 'bg-text-primary border-text-primary text-surface' 
+                    : 'bg-surface border-border text-text-secondary'
+                }`}
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Institution Grid Filter Hub */}
+        <div className="flex gap-2 px-5 py-2.5 bg-surface-2 border-t border-border overflow-x-auto scrollbar-none">
+          {SCHOOLS.map((s) => {
+            const active = selectedSchool === s.id;
+            return (
+              <button
+                key={s.id}
+                onClick={() => setSelectedSchool(s.id)}
+                className={`px-4 py-1.5 rounded-full border text-xs font-bold whitespace-nowrap transition-colors ${
+                  active
+                    ? 'bg-primary border-primary text-white shadow-sm'
+                    : 'bg-surface border-border text-text-secondary hover:bg-surface-2'
+                }`}
+                style={{ fontFamily: 'var(--font-display)' }}
+              >
+                {s.label}
+              </button>
+            );
+          })}
+        </div>
+      </header>
+
+      {/* Main Render Viewport */}
+      <div className="flex-1 overflow-y-auto px-5 py-4 flex flex-col gap-2.5 pb-24">
+        {isLoading ? (
+          <div className="flex-1 flex flex-col items-center justify-center py-24 text-text-muted">
+            <svg className="animate-spin h-6 w-6" viewBox="0 0 24 24" fill="none">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+          </div>
+        ) : leaderboardRows.length === 0 ? (
+          <div className="flex flex-col items-center text-center gap-2 py-16 px-4 bg-surface border border-border rounded-2xl shadow-sm">
+            <span className="text-3xl">🏆</span>
+            <p className="text-sm font-bold text-text-primary" style={{ fontFamily: 'var(--font-display)' }}>
+              No calculations recorded
+            </p>
+            <p className="text-xs text-text-muted max-w-xs leading-normal" style={{ fontFamily: 'var(--font-body)' }}>
+              Be the first to step up! Finish an exam-mode test session right now to claim rank position #1.
+            </p>
+          </div>
         ) : (
           <>
-            {/* Podium */}
-            {top3.length >= 2 && (
-              <Podium top3={top3} currentUserId={user?.id} />
-            )}
-
-            {/* Ranked list — position 4 onwards */}
-            {rest.length > 0 && (
-              <div className="flex flex-col gap-2">
-                {rest.map((entry) => (
-                  <RankRow
-                    key={entry.id}
-                    entry={entry}
-                    currentUserId={user?.id}
-                    rank={entry.rank_position}
-                  />
-                ))}
-              </div>
-            )}
-
-            {/* If current user not in top list, pin their row at bottom */}
-            {myEntry && myEntry.rank_position > entries.length && (
-              <div
-                className="mt-2 pt-3 border-t"
-                style={{ borderColor: 'var(--color-border)' }}
-              >
-                <p
-                  className="text-xs mb-2"
-                  style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-muted)' }}
-                >
-                  Your position
-                </p>
-                <RankRow
-                  entry={myEntry}
-                  currentUserId={user?.id}
-                  rank={myEntry.rank_position}
-                />
-              </div>
-            )}
+            {/* Realtime rankings list (Ranks 1 to 15) */}
+            {leaderboardRows.map((entry) => (
+              <RankRow
+                key={entry.user_id}
+                entry={entry}
+                currentUserId={user?.id}
+              />
+            ))}
           </>
         )}
       </div>
 
-      <AppTabs active="analytics" onChange={(t) => onNavigate?.(t)} />
+      {/* Sticky Bottom Persistent Identity Dock */}
+      {isUserOutsideTop15 && !isLoading && (
+        <div 
+          className="absolute left-0 right-0 bg-surface border-t border-border px-5 py-3.5 shadow-[0_-4px_12px_rgba(0,0,0,0.04)] z-30"
+          style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="text-[10px] uppercase font-bold tracking-wider text-text-muted mb-2" style={{ fontFamily: 'var(--font-body)' }}>
+            Your Competitive Standing
+          </div>
+          <RankRow entry={myRowPosition} currentUserId={user?.id} isSticky />
+        </div>
+      )}
+
+      {/* Main System Core Tab Navigation */}
+      <AppTabs active="leaderboard" onChange={(t) => onNavigate?.(t)} />
     </div>
   );
 }
