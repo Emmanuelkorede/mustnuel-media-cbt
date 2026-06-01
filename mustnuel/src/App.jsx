@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router';
 import { useAuth } from './context/AuthContext';
+import AdminVerification from './pages/AdminVerification';
 
 import SplashPage from './pages/SplashPage';
 import OnboardingPage from './pages/OnboardingPage';
@@ -18,6 +19,8 @@ import LeaderboardPage from './pages/LeaderboardPage';
 import ProfilePage from './pages/ProfilePage';
 import NotificationsPage from './pages/notifications';
 import PremiumPage from './pages/PremiunPage';
+import AdminProtectedRoute from './components/AdminProtectedRoute';
+import AdminDashboard from './pages/AdminDashboard';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -139,6 +142,11 @@ export default function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/premium" element={<PremiumPage />} />
+
+        <Route element={<AdminProtectedRoute />}>
+  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+  <Route path="/admin/verification" element={<AdminVerification />} />
+</Route>
 
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
         <Route path="*" element={<Navigate to={user ? (isProfileComplete ? "/home" : "/setup") : "/onboarding"} replace />} />
