@@ -103,22 +103,22 @@ export default function PWAInstallBanner() {
       </div>
 
       {/* Control Buttons Container (Hidden completely on iOS) */}
-      {!isIOS && (
-        <div className="flex items-center justify-end gap-2 text-xs pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
-          <button 
-            onClick={handleDismiss}
-            className="px-3 py-1.5 opacity-60 hover:opacity-100 font-medium"
-          >
-            Not Now
-          </button>
-          <button 
-            onClick={handleAndroidInstall}
-            className="px-4 py-2 rounded-xl font-bold transition active:scale-95 text-white bg-emerald-600 hover:bg-emerald-500"
-          >
-            Install App
-          </button>
-        </div>
-      )}
+{!isIOS && (
+  <div className="flex items-center justify-end gap-2 text-xs pt-2 border-t" style={{ borderColor: 'var(--color-border)' }}>
+    <button 
+      onClick={handleDismiss}
+      className="px-3 py-1.5 opacity-60 hover:opacity-100 font-medium"
+    >
+      Not Now
+    </button>
+    <button 
+      onClick={handleAndroidInstall}
+      className="px-4 py-2 rounded-xl font-bold transition active:scale-95 text-white bg-emerald-600 hover:bg-emerald-500"
+    >
+      Install App
+    </button>
+  </div>
+)}
     </div>
   );
 }
