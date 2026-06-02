@@ -20,9 +20,9 @@ export default function PremiumPage() {
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
   // Core App Configuration
-  const BANK_ACCOUNT = '9130333471'; 
-  const BANK_NAME = 'Palmpay'; 
-  const ACCOUNT_NAME = 'Emmanuel Korede Job';
+  const BANK_ACCOUNT = '9138770110'; 
+  const BANK_NAME = 'opay'; 
+  const ACCOUNT_NAME = 'Mustapha Hakeem olasunkanmi';
   const PREMIUM_PRICE = '₦5,000';
 
   useEffect(() => {

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router';
@@ -69,8 +68,13 @@ export default function App() {
     navigate(`/${target}`);
   };
 
-  // ── Real Skeleton Loading Page Layout ──
-  if (isLoading || currentRoute === null) {
+  // ── FIX: Force skeleton view to remain active during intermediate layout routing updates ──
+  const isMismatched = user && (
+    (isProfileComplete && ['splash', 'onboarding', 'auth', 'setup'].includes(currentRoute)) ||
+    (!isProfileComplete && currentRoute !== 'setup' && currentRoute !== null)
+  );
+
+  if (isLoading || currentRoute === null || isMismatched) {
     return (
       <div className="fixed inset-0 flex flex-col select-none pointer-events-none" style={{ backgroundColor: 'var(--color-canvas)' }}>
         
@@ -144,9 +148,9 @@ export default function App() {
         <Route path="/premium" element={<PremiumPage />} />
 
         <Route element={<AdminProtectedRoute />}>
-  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-  <Route path="/admin/verification" element={<AdminVerification />} />
-</Route>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/verification" element={<AdminVerification />} />
+        </Route>
 
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
         <Route path="*" element={<Navigate to={user ? (isProfileComplete ? "/home" : "/setup") : "/onboarding"} replace />} />

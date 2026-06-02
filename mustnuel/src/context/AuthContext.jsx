@@ -1,8 +1,5 @@
 // =============================================================================
 // src/context/AuthContext.jsx
-// -----------------------------------------------------------------------------
-// Final Fix: Prevents network deadlock by strictly isolating the bootstrap fetch 
-// from the listener fetch using the `isBootstrapping` flag.
 // =============================================================================
 
 import {
@@ -139,7 +136,13 @@ export function AuthProvider({ children }) {
     setAuthError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      options: { 
+        redirectTo: `${window.location.origin}/auth`, // Redirect straight back to your auth engine route
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent'
+        }
+      },
     });
     if (error) { setAuthError(error.message); return { success: false, error: error.message }; }
     return { success: true };
