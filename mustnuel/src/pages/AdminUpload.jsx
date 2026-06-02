@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { parseQuestionsCSV } from "../lib/csvparser";
-import { FiCloudUpload, FiDatabase, FiAlertTriangle, FiCheckCircle, FiEye } from "react-icons/fi";
+import { FiUploadCloud, FiDatabase, FiAlertTriangle, FiCheckCircle, FiEye } from "react-icons/fi";
 import AdminHeader from "../components/AdminHeader";
 import AppTabs from "../components/navigation/AppTabs";
 
@@ -108,7 +108,7 @@ export default function AdminUpload() {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
             <div className="flex flex-col items-center justify-center gap-2">
-              <FiCloudUpload size={28} className="text-text-muted group-hover:text-primary transition-colors" />
+              <FiUploadCloud size={28} className="text-text-muted group-hover:text-primary transition-colors" />
               <p className="text-xs font-bold text-text-primary break-all px-2" style={{ fontFamily: 'var(--font-body)' }}>
                 {fileName ? fileName : "Tap or Drag Questions CSV here"}
               </p>
