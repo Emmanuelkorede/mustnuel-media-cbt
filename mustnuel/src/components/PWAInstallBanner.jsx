@@ -113,7 +113,7 @@ export default function PWAInstallBanner() {
     </button>
     <button 
       onClick={handleAndroidInstall}
-      className="px-4 py-2 rounded-xl font-bold transition active:scale-95 text-white bg-emerald-600 hover:bg-emerald-500"
+      className="px-4 py-2 rounded-xl font-bold transition active:scale-95 text-white bg-blue-600 hover:bg-blue-500"
     >
       Install App
     </button>
