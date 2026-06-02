@@ -8,7 +8,7 @@ import { FiMenu, FiX, FiSliders, FiCheckSquare, FiDatabase, FiMessageSquare } fr
 const ADMIN_SUB_TABS = [
   { id: 'dashboard', label: 'Metrics', icon: FiSliders, path: '/admin/dashboard' },
   { id: 'premium', label: 'Verifications', icon: FiCheckSquare, path: '/admin/verification' },
-  { id: 'questions', label: 'CBT Bank', icon: FiDatabase, path: '/admin/questions' },
+  { id: 'questions', label: 'CBT Bank', icon: FiDatabase, path: '/admin/upload' },
   { id: 'feedback', label: 'Support', icon: FiMessageSquare, path: '/admin/feedback' },
 ];
 

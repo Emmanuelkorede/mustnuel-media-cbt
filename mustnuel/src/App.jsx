@@ -21,6 +21,7 @@ import PremiumPage from './pages/PremiunPage';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
 import PWAInstallBanner from './components/PWAInstallBanner';
+import AdminUpload from './pages/AdminUpload';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -151,6 +152,7 @@ export default function App() {
         <Route element={<AdminProtectedRoute />}>
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/verification" element={<AdminVerification />} />
+          <Route path="/admin/upload" element={<AdminUpload />} />
         </Route>
 
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
