@@ -272,52 +272,55 @@ export default function PremiumPage() {
         ) : (
           /* State 3: Interactive Two-Step Upload Form */
           <>
-            {/* Step 1 Account Specifications */}
-            <div className="flex flex-col gap-2">
-              <label 
-                className="text-[11px] font-bold tracking-widest uppercase ml-1"
-                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}
-              >
-                Step 1 — Make Bank Transfer
-              </label>
+{/* Step 1 Account Specifications */}
+<div className="flex flex-col gap-2">
+  <label 
+    className="text-[11px] font-bold tracking-widest uppercase ml-1"
+    style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}
+  >
+    Step 1 — Make Bank Transfer
+  </label>
 
-              <div 
-                className="rounded-3xl p-5 border flex flex-col gap-4 shadow-sm"
-                style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-              >
-                <div 
-                  className="flex justify-between items-center p-3.5 rounded-2xl border"
-                  style={{ backgroundColor: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}
-                >
-                  <div>
-                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Account Number</span>
-                    <p className="text-xl font-bold font-mono tracking-wide mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{BANK_ACCOUNT}</p>
-                  </div>
-                  <button
-                    onClick={handleCopyAccount}
-                    className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer active:scale-95 flex items-center gap-1.5"
-                    style={{
-                      backgroundColor: isCopied ? 'var(--color-primary)' : 'var(--color-canvas)',
-                      borderColor: 'var(--color-border)',
-                      color: isCopied ? '#ffffff' : 'var(--color-text-primary)'
-                    }}
-                  >
-                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
-                  </button>
-                </div>
+  <div 
+    className="rounded-3xl p-5 border flex flex-col gap-4 shadow-sm"
+    style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+  >
+    <div 
+      className="flex justify-between items-center p-3.5 rounded-2xl border"
+      style={{ backgroundColor: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}
+    >
+      <div>
+        <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Account Number</span>
+        <p className="text-xl font-bold font-mono tracking-wide mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{BANK_ACCOUNT}</p>
+      </div>
+      <button
+        onClick={handleCopyAccount}
+        className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer active:scale-95 flex items-center gap-1.5"
+        style={{
+          backgroundColor: isCopied ? 'var(--color-primary)' : 'var(--color-canvas)',
+          borderColor: 'var(--color-border)',
+          color: isCopied ? '#ffffff' : 'var(--color-text-primary)'
+        }}
+      >
+        <span>{isCopied ? 'Copied' : 'Copy'}</span>
+      </button>
+    </div>
 
-                <div className="grid grid-cols-2 gap-4 text-xs px-1" style={{ fontFamily: 'var(--font-body)' }}>
-                  <div>
-                    <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Bank Provider</span>
-                    <p className="font-bold mt-0.5 text-md" style={{ color: 'var(--color-text-primary)' }}>{BANK_NAME}</p>
-                  </div>
-                  <div>
-                    <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Beneficiary Name</span>
-                    <p className="font-bold mt-0.5 text-md truncate" style={{ color: 'var(--color-text-primary)' }}>{ACCOUNT_NAME}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <div className="grid grid-cols-2 gap-4 text-xs px-1" style={{ fontFamily: 'var(--font-body)' }}>
+      <div>
+        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Bank Provider</span>
+        <p className="font-bold mt-0.5 text-md" style={{ color: 'var(--color-text-primary)' }}>{BANK_NAME}</p>
+      </div>
+      <div>
+        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Beneficiary Name</span>
+        {/* FIXED: Removed 'truncate' and added 'break-words leading-tight' so the name wraps cleanly onto two lines if needed */}
+        <p className="font-bold mt-0.5 text-md break-words leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+          {ACCOUNT_NAME}
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
 
             {/* Step 2 File Submission Gate */}
             <div className="flex flex-col gap-2">

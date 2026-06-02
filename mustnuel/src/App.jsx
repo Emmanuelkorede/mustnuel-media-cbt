@@ -20,6 +20,7 @@ import NotificationsPage from './pages/notifications';
 import PremiumPage from './pages/PremiunPage';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
+import PWAInstallBanner from './components/PWAInstallBanner';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -158,6 +159,7 @@ export default function App() {
     </AnimatePresence>
 
     <UpgradeModal />
+    <PWAInstallBanner />
     </>
   );
 }
