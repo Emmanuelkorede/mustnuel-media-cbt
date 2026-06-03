@@ -161,16 +161,17 @@ export default function AdminUpload() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
+              {/* EXPANDED TEXTAREA: Much taller and resizeable vertically */}
               <textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="school,subject,year,is_free,question_text,option_a,option_b,option_c,option_d,correct_option,explanation&#10;JAMB,Physics,2022,true,What is speed?,Scalar,Vector,Tensor,None,A,Speed has no direction"
-                className="w-full h-36 font-mono text-[11px] p-3 rounded-xl border border-border bg-canvas text-text-primary focus:outline-none focus:border-primary leading-relaxed scrollbar-thin"
+                className="w-full min-h-[350px] resize-y font-mono text-[11px] p-4 rounded-xl border border-border bg-canvas text-text-primary focus:outline-none focus:border-primary leading-relaxed scrollbar-thin"
               />
               <button
                 onClick={handleTextValidation}
                 disabled={!rawText.trim()}
-                className="w-full py-2.5 bg-text-primary text-canvas text-[11px] font-black uppercase tracking-wider rounded-xl transition disabled:opacity-30 cursor-pointer"
+                className="w-full py-3 bg-text-primary text-canvas text-[11px] font-black uppercase tracking-wider rounded-xl transition disabled:opacity-30 cursor-pointer"
                 style={{ fontFamily: 'var(--font-body)' }}
               >
                 Check & Validate Layout
