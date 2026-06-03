@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabaseClient";
 import { parseQuestionsCSV, processRawCSVText } from "../lib/csvparser";
 import { FiUploadCloud, FiFileText, FiDatabase, FiAlertTriangle, FiCheckCircle, FiLayers, FiList } from "react-icons/fi";
 import AdminHeader from "../components/AdminHeader";
-import AppTabs from "../components/AppTabs";
+import AppTabs from "../components/navigation/AppTabs";
 
 export default function AdminUpload() {
   const [activeTab, setActiveTab] = useState("file"); // 'file' or 'paste'
