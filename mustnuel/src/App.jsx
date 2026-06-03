@@ -22,6 +22,7 @@ import AdminProtectedRoute from './components/AdminProtectedRoute';
 import AdminDashboard from './pages/AdminDashboard';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import AdminUpload from './pages/AdminUpload';
+import NotificationPage from './pages/notifications';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -146,7 +147,8 @@ export default function App() {
         <Route path="/analytics" element={<AnalyticsPage />} />
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/notifications" element={<NotificationPage />} />
+        <Route path="/notification/:id" element={<NotificationPage />} />
         <Route path="/premium" element={<PremiumPage />} />
 
         <Route element={<AdminProtectedRoute />}>
