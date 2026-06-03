@@ -149,7 +149,7 @@ export default function App() {
         <Route path="/leaderboard" element={<LeaderboardPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/notifications" element={<NotificationPage />} />
-        <Route path="/notification/:id" element={<NotificationPage />} />
+        <Route path="/notifications/:id" element={<NotificationPage />} />
         <Route path="/premium" element={<PremiumPage />} />
 
         <Route element={<AdminProtectedRoute />}>

@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { useAuth } from "../context/AuthContext";
-import { FiBell, FiCheckCircle, FiAlertTriangle, FiTrash2, FiLayers, FiEye, FiInbox } from "react-icons/fi";
+import { FiBell, FiCheckCircle, FiAlertTriangle, FiTrash2, FiLayers, FiEye, FiInbox, FiX } from "react-icons/fi";
 import AdminHeader from "../components/AdminHeader";
 import AppTabs from "../components/navigation/AppTabs";
 
@@ -21,6 +21,9 @@ export default function AdminNotifications() {
   const [status, setStatus] = useState({ type: "", message: "" });
   const [recentNotifs, setRecentNotifs] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+
+  // Custom modal state for deletion confirmation
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
 
   // Load a quick running log of previously dispatched updates
   async function fetchHistoryLog() {
@@ -107,22 +110,25 @@ export default function AdminNotifications() {
   }
 
   // Handle immediate deletion of old announcements
-  async function handleDeleteNotification(id) {
-    if (!window.confirm("Are you sure you want to delete this notice permanently?")) return;
+  async function confirmDeleteNotification() {
+    if (!deleteTargetId) return;
     try {
       const { error } = await supabase
         .from("notifications")
         .delete()
-        .eq("id", id);
+        .eq("id", deleteTargetId);
       if (error) throw error;
       fetchHistoryLog();
+      setStatus({ type: "success", message: "Notice permanently deleted from global stream." });
     } catch (err) {
-      alert(`Deletion failure: ${err.message}`);
+      setStatus({ type: "error", message: `Deletion failure: ${err.message}` });
+    } finally {
+      setDeleteTargetId(null);
     }
   }
 
   return (
-    <div className="min-h-screen bg-canvas flex flex-col select-none">
+    <div className="min-h-screen bg-canvas flex flex-col select-none relative">
       <AdminHeader currentSubTab="notifications" />
 
       {/* MAIN CONTENT VIEWPORT CONTAINER */}
@@ -294,7 +300,7 @@ export default function AdminNotifications() {
                     </p>
                   </div>
                   <button
-                    onClick={() => handleDeleteNotification(notif.id)}
+                    onClick={() => setDeleteTargetId(notif.id)}
                     className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/5 rounded-xl transition shrink-0 cursor-pointer"
                     title="Purge announcement"
                   >
@@ -308,6 +314,48 @@ export default function AdminNotifications() {
       </main>
 
       <AppTabs active="admin" />
+
+      {/* STANDARD MODAL SYSTEM CONFIRM POPUP DISPLAY */}
+      {deleteTargetId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-canvas/60 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-surface border border-border rounded-2xl max-w-sm w-full p-5 shadow-lg relative flex flex-col gap-4 animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setDeleteTargetId(null)}
+              className="absolute top-3 right-3 p-1 rounded-lg text-text-muted hover:bg-canvas transition cursor-pointer"
+            >
+              <FiX size={16} />
+            </button>
+            
+            <div className="flex items-center gap-2 text-red-500">
+              <FiAlertTriangle size={20} />
+              <h4 className="text-sm font-black uppercase tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
+                Confirm Notice Purge
+              </h4>
+            </div>
+
+            <p className="text-xs text-text-secondary leading-relaxed font-medium" style={{ fontFamily: 'var(--font-body)' }}>
+              Are you sure you want to delete this notice permanently? This action will destroy the document record and cannot be reversed.
+            </p>
+
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => setDeleteTargetId(null)}
+                className="px-3 py-2 border border-border text-text-secondary font-black text-[10px] uppercase tracking-wide rounded-xl hover:bg-canvas transition cursor-pointer"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteNotification}
+                className="px-3 py-2 bg-red-500 hover:bg-red-600 text-white font-black text-[10px] uppercase tracking-wide rounded-xl transition cursor-pointer"
+                style={{ fontFamily: 'var(--font-body)' }}
+              >
+                Delete Notice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
