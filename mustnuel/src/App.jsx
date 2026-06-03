@@ -23,6 +23,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import PWAInstallBanner from './components/PWAInstallBanner';
 import AdminUpload from './pages/AdminUpload';
 import NotificationPage from './pages/notifications';
+import AdminNotifications from './pages/AdminNotifications';
 
 export default function App() {
   const { user, isLoading, isProfileComplete } = useAuth();
@@ -155,6 +156,7 @@ export default function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/verification" element={<AdminVerification />} />
           <Route path="/admin/upload" element={<AdminUpload />} />
+          <Route path="/admin/notifications" element={<AdminNotifications />} />
         </Route>
 
         {/* Fallback Catch-all: Redirects any unknown sub-paths securely */}
