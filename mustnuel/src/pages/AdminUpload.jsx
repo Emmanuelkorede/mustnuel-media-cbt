@@ -3,7 +3,7 @@
 // =============================================================================
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
-import { parseQuestionsCSV, processRawCSVText } from "../lib/csvParser";
+import { parseQuestionsCSV, processRawCSVText } from "../lib/csvparser";
 import { FiUploadCloud, FiFileText, FiDatabase, FiAlertTriangle, FiCheckCircle, FiLayers, FiList } from "react-icons/fi";
 import AdminHeader from "../components/AdminHeader";
 import AppTabs from "../components/AppTabs";
