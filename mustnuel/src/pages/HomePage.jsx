@@ -48,7 +48,7 @@ function TopBar({ displayName, onNotificationPress, hasUnread }) {
           <h1
             className="text-base font-black leading-none truncate"
             style={{
-              fontFamily: 'var(--font-display)',
+              fontFamily: 'var(--font-body)',
               color:      'var(--color-text-primary)',
               letterSpacing: '-0.01em',
             }}
