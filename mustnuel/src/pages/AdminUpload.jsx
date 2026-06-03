@@ -4,7 +4,7 @@
 import { useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { parseQuestionsCSV, processRawCSVText } from "../lib/csvparser";
-import { FiUploadCloud, FiFileText, FiDatabase, FiAlertTriangle, FiCheckCircle, FiLayers, FiList } from "react-icons/fi";
+import { FiUploadCloud, FiFileText, FiDatabase, FiAlertTriangle, FiCheckCircle, FiLayers } from "react-icons/fi";
 import AdminHeader from "../components/AdminHeader";
 import AppTabs from "../components/navigation/AppTabs";
 
@@ -26,7 +26,6 @@ export default function AdminUpload() {
     setFileName("");
   }
 
-  // Handle uploaded native files
   async function handleFileSelection(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -41,7 +40,6 @@ export default function AdminUpload() {
     }
   }
 
-  // Handle pasted text string blocks directly
   function handleTextValidation() {
     if (!rawText.trim()) return;
     resetState();
@@ -101,11 +99,11 @@ export default function AdminUpload() {
     <div className="min-h-screen bg-canvas flex flex-col select-none">
       <AdminHeader currentSubTab="upload" />
 
-      {/* FIXED BOUNDING VIEWPORT: Insulates elements from sliding beneath the floating navigation panel */}
+      {/* MAIN VIEWPORT OVERFLOW CONTAINER */}
       <main className="max-w-7xl w-full mx-auto px-4 mt-4 h-[calc(100vh-65px-64px)] overflow-y-auto pb-12 flex flex-col gap-5 scrollbar-thin">
         
         {/* Module Title Section */}
-        <div>
+        <div className="shrink-0">
           <h2 className="text-xl font-black text-text-primary tracking-tight" style={{ fontFamily: 'var(--font-display)' }}>
             Question Engine Management
           </h2>
@@ -143,7 +141,7 @@ export default function AdminUpload() {
         </div>
 
         {/* INPUT PROCESSOR CONTAINER BOX */}
-        <section className="bg-surface border border-border rounded-2xl p-4 shadow-sm flex flex-col gap-4">
+        <section className="bg-surface border border-border rounded-2xl p-4 shadow-sm flex flex-col gap-4 shrink-0">
           {activeTab === "file" ? (
             <div className="border-2 border-dashed border-border hover:border-primary rounded-xl p-7 bg-canvas/30 text-center relative cursor-pointer group transition">
               <input
@@ -161,12 +159,11 @@ export default function AdminUpload() {
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              {/* EXPANDED TEXTAREA: Much taller and resizeable vertically */}
               <textarea
                 value={rawText}
                 onChange={(e) => setRawText(e.target.value)}
                 placeholder="school,subject,year,is_free,question_text,option_a,option_b,option_c,option_d,correct_option,explanation&#10;JAMB,Physics,2022,true,What is speed?,Scalar,Vector,Tensor,None,A,Speed has no direction"
-                className="w-full min-h-[350px] resize-y font-mono text-[11px] p-4 rounded-xl border border-border bg-canvas text-text-primary focus:outline-none focus:border-primary leading-relaxed scrollbar-thin"
+                className="w-full h-40 font-mono text-[11px] p-4 rounded-xl border border-border bg-canvas text-text-primary focus:outline-none focus:border-primary leading-relaxed scrollbar-thin"
               />
               <button
                 onClick={handleTextValidation}
@@ -207,54 +204,55 @@ export default function AdminUpload() {
           )}
         </section>
 
-        {/* DATA MATRIX SYSTEM VISUALIZATION PREVIEW GRID */}
+        {/* FIXED-HEIGHT VISUALIZATION MATRIX SECTION: Explicitly sized to avoid layout squishing */}
         {questions.length > 0 && (
-          <section className="flex flex-col gap-2 min-h-0">
-            <div className="flex items-center justify-between shrink-0">
+          <section className="flex flex-col gap-2 shrink-0">
+            <div className="flex items-center justify-between">
               <h3 className="text-[10px] font-black uppercase tracking-wider text-text-muted flex items-center gap-1.5" style={{ fontFamily: 'var(--font-body)' }}>
                 <FiLayers size={12} className="text-primary" />
                 <span>Staged Rows ({questions.length} Items)</span>
               </h3>
               <span className="text-[10px] text-text-muted italic font-medium" style={{ fontFamily: 'var(--font-body)' }}>
-                Swipe left/right to scroll matrix columns
+                Horizontal scroll to see all columns
               </span>
             </div>
 
-            <div className="w-full overflow-x-auto rounded-xl border border-border shadow-sm bg-surface scrollbar-thin">
-              <table className="w-full border-collapse text-left text-[11px] font-mono">
-                <thead>
-                  <tr className="bg-canvas/80 border-b border-border text-text-muted uppercase text-[9px] font-bold tracking-wider">
-                    <th className="p-2.5 border-r border-border">School</th>
-                    <th className="p-2.5 border-r border-border">Subject</th>
-                    <th className="p-2.5 border-r border-border">Year</th>
-                    <th className="p-2.5 border-r border-border">Free</th>
-                    <th className="p-2.5 border-r border-border min-w-[220px]">Question Text</th>
-                    <th className="p-2.5 border-r border-border text-center">Ans</th>
-                    <th className="p-2.5 min-w-[160px]">Explanation</th>
+            {/* Added dedicated height and double scroll isolation here */}
+            <div className="w-full h-[450px] overflow-auto border border-border rounded-xl shadow-sm bg-surface scrollbar-thin">
+              <table className="w-full border-collapse text-left text-[11px] font-mono min-w-[900px]">
+                <thead className="sticky top-0 z-20 bg-surface border-b border-border text-text-muted uppercase text-[9px] font-bold tracking-wider">
+                  <tr>
+                    <th className="p-3 border-r border-border bg-surface/90 backdrop-blur-xs">School</th>
+                    <th className="p-3 border-r border-border bg-surface/90 backdrop-blur-xs">Subject</th>
+                    <th className="p-3 border-r border-border bg-surface/90 backdrop-blur-xs">Year</th>
+                    <th className="p-3 border-r border-border bg-surface/90 backdrop-blur-xs">Free</th>
+                    <th className="p-3 border-r border-border min-w-[260px] bg-surface/90 backdrop-blur-xs">Question Text</th>
+                    <th className="p-3 border-r border-border text-center bg-surface/90 backdrop-blur-xs">Ans</th>
+                    <th className="p-3 min-w-[180px] bg-surface/90 backdrop-blur-xs">Explanation</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40 text-text-primary">
                   {questions.slice(0, 50).map((row, idx) => (
                     <tr key={idx} className="border-b border-border/30 hover:bg-canvas/40 transition-colors">
-                      <td className="p-2 border-r border-border/40 max-w-[100px] truncate font-sans font-black text-xs">{row.school}</td>
-                      <td className="p-2 border-r border-border/40 max-w-[100px] truncate font-sans font-bold text-text-secondary">{row.subject}</td>
-                      <td className="p-2 border-r border-border/40 text-text-muted">{row.year || "NULL"}</td>
-                      <td className="p-2 border-r border-border/40">
+                      <td className="p-3 border-r border-border/40 max-w-[110px] truncate font-sans font-black text-xs">{row.school}</td>
+                      <td className="p-3 border-r border-border/40 max-w-[110px] truncate font-sans font-bold text-text-secondary">{row.subject}</td>
+                      <td className="p-3 border-r border-border/40 text-text-muted">{row.year || "NULL"}</td>
+                      <td className="p-3 border-r border-border/40">
                         <span className={`px-1.5 py-0.5 rounded font-sans text-[9px] font-black tracking-wide ${
                           row.is_free ? "bg-green-500/10 text-green-500" : "bg-text-muted/10 text-text-muted"
                         }`}>
                           {row.is_free ? "TRUE" : "FALSE"}
                         </span>
                       </td>
-                      <td className="p-2 border-r border-border/40 max-w-[240px] truncate font-sans text-xs" title={row.question_text}>
+                      <td className="p-3 border-r border-border/40 max-w-[260px] truncate font-sans text-xs" title={row.question_text}>
                         {row.question_text}
                       </td>
-                      <td className="p-2 border-r border-border/40 text-center">
+                      <td className="p-3 border-r border-border/40 text-center">
                         <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded font-black">
                           {row.correct_option}
                         </span>
                       </td>
-                      <td className="p-2 max-w-[160px] truncate font-sans text-text-muted italic text-xs" title={row.explanation}>
+                      <td className="p-3 max-w-[180px] truncate font-sans text-text-muted italic text-xs" title={row.explanation}>
                         {row.explanation || "NULL"}
                       </td>
                     </tr>
@@ -278,20 +276,17 @@ export default function AdminUpload() {
       {modal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="w-full max-w-sm bg-surface border border-border rounded-2xl p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200 text-center flex flex-col items-center">
-            
             <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 ${
               modal.type === "error" ? "bg-red-500/10 text-red-500" : "bg-green-500/10 text-green-500"
             }`}>
               {modal.type === "error" ? <FiAlertTriangle size={22} /> : <FiCheckCircle size={22} />}
             </div>
-
             <h4 className="text-md font-black text-text-primary tracking-tight mb-1.5 uppercase" style={{ fontFamily: 'var(--font-display)' }}>
               {modal.title}
             </h4>
             <p className="text-xs text-text-secondary mb-5 leading-relaxed" style={{ fontFamily: 'var(--font-body)' }}>
               {modal.message}
             </p>
-            
             <button
               onClick={() => setModal({ ...modal, isOpen: false })}
               className="w-full py-3 rounded-xl text-xs font-black uppercase tracking-wider bg-text-primary text-canvas hover:opacity-90 transition cursor-pointer"
