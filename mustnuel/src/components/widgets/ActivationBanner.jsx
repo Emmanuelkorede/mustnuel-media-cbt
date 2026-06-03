@@ -20,7 +20,7 @@ export default function ActivationBanner({ isActivated, targetSchool }) {
             <p
               className="text-3xl font-black leading-tight truncate w-full"
               style={{
-                fontFamily:    'var(--font-display)',
+                fontFamily:    'var(--font-body)',
                 color:         'var(--color-text-primary)',
                 letterSpacing: '-0.03em',
               }}

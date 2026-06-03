@@ -181,7 +181,7 @@ export default function LeaderboardPage({ onNavigate }) {
       {/* Top Header Section */}
       <header className="bg-surface border-b border-border pt-4 shrink-0">
         <div className="px-5 pb-3.5 flex items-center justify-between">
-          <h1 className="text-xl font-black tracking-tight text-text-primary" style={{ fontFamily: 'var(--font-display)' }}>
+          <h1 className="text-xl font-black tracking-tight text-text-primary" style={{ fontFamily: 'var(--font-body)' }}>
             Leaderboard
           </h1>
           <div className="bg-primary/10 rounded-full px-3 py-1 flex items-center gap-1">

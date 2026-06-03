@@ -390,7 +390,7 @@ export default function PracticeHubPage() {
         <h1
           className="text-base font-black text-center whitespace-nowrap px-2"
           style={{
-            fontFamily:    'var(--font-display)',
+            fontFamily:    'var(--font-body)',
             color:         'var(--color-text-primary)',
             letterSpacing: '-0.01em',
           }}
