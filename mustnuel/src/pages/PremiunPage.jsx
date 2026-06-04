@@ -155,7 +155,7 @@ export default function PremiumPage() {
         <div>
           <h1 
             className="text-3xl font-extrabold tracking-tight"
-            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)', letterSpacing: '-0.03em' }}
+            style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-primary)', letterSpacing: '-0.03em' }}
           >
             Premium Upgrade
           </h1>
