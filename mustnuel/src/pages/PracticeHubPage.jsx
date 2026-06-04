@@ -323,11 +323,10 @@ export default function PracticeHubPage() {
   }, [isActivated, qQuantity]);
 
   useEffect(() => {
-  // Only inject defaults if the user hasn't chosen any subjects yet
-  if (schoolConfig && subjects.length === 0) {
+  if (schoolConfig) {
     setSubjects(schoolConfig.default_selection.slice(0, 4));
   }
-}, [school, schoolConfig]); // Don't add 'subjects' here to prevent re-trigger loops
+}, [school, schoolConfig]);
 
   useEffect(() => {
     if (location.state?.mode) {
