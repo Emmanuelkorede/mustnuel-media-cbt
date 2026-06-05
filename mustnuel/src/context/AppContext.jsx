@@ -26,8 +26,8 @@ export const POST_UTME_SUBJECTS_BY_SCHOOL = {
   },
   OAU: {
     display_name: "Obafemi Awolowo University",
-    subjects: [ 'APTITUDE', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Government', 'Economics' ,'CRS' , 'IRS' , 'Yoruba' , 'Accounting' , 'Literature'],
-    default_selection: ['Mathematics', 'APTITUDE']
+    subjects: [ 'APTITUDE', 'MATHEMATICS', 'Physics', 'Chemistry', 'Biology', 'Government', 'Economics' ,'CRS' , 'IRS' , 'Yoruba' , 'Accounting' , 'Literature'],
+    default_selection: ['MATHEMATICS', 'APTITUDE']
   }
 };
 
@@ -62,7 +62,7 @@ export const SUBJECTS_BY_TRACK = {
 };
 
 export const AVAILABLE_YEARS = Array.from(
-  { length: 2025 - 2020 + 1 },
+  { length: 2025 - 2010 + 1 },
   (_, i) => 2025 - i
 );
 

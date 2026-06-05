@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabaseClient';
 
 /**
- * Fetches a randomized pool of questions for a specific single subject.
+ * Fetches a pool of questions for a specific single subject.
+ * Enforces rigid static ordering for free users.
  */
 export async function fetchQuestionsForSubject({ school, subject, year, freeOnly, limit }) {
   try {
@@ -16,7 +17,7 @@ export async function fetchQuestionsForSubject({ school, subject, year, freeOnly
     // Filter by specific single subject
     if (subject) q = q.eq('subject', subject);
 
-    // If a specific year is chosen, filter by it. If null, ignore year filter (Mock Mode)
+    // Filter by year if chosen
     if (year) {
       const parsedYear = parseInt(year, 10);
       if (!isNaN(parsedYear)) {
@@ -24,7 +25,12 @@ export async function fetchQuestionsForSubject({ school, subject, year, freeOnly
       }
     }
 
-    if (freeOnly) q = q.eq('is_free', true);
+    // Explicitly lock down query filters if free tier active
+    if (freeOnly) {
+      q = q.eq('is_free', true);
+      // 🔒 CRITICAL: Force a strict deterministic order so free users get the exact same rows every time
+      q = q.order('created_at', { ascending: true });
+    }
 
     // Enforce the strict allocation limit passed down from the master builder
     const { data, error } = await q.limit(limit);
@@ -43,8 +49,7 @@ export async function fetchQuestionsForSubject({ school, subject, year, freeOnly
 
 /**
  * Master session setup loader.
- * Iterates through chosen subjects, balances the distribution perfectly,
- * and handles leftover question allocations cleanly.
+ * Iterates through chosen subjects and completely bypasses randomization mechanics for free accounts.
  */
 export async function fetchQuestions(filters = {}) {
   const {
@@ -65,10 +70,7 @@ export async function fetchQuestions(filters = {}) {
     const remainder = limit % totalSubjects;
 
     const fetchPromises = subjects.map((subj, idx) => {
-      // If there is a remainder, distribute 1 extra question to the first few subjects
       const allocatedCount = basePerSubject + (idx < remainder ? 1 : 0);
-
-      // Only fire the fetch if the allocated count is greater than 0
       if (allocatedCount === 0) return Promise.resolve([]);
 
       return fetchQuestionsForSubject({
@@ -85,10 +87,16 @@ export async function fetchQuestions(filters = {}) {
     // Flatten all subject arrays into a single unified master array
     let masterPool = resultsArray.flat();
 
-    // Global client-side random shuffle to mix subjects evenly
-    masterPool = masterPool.sort(() => Math.random() - 0.5);
+    // 🔒 CRITICAL ENGINE BYPASS RULE
+    if (!freeOnly) {
+      // Premium users get full global client-side random shuffle to mix subjects evenly
+      masterPool = masterPool.sort(() => Math.random() - 0.5);
+    } else {
+      // Free users skip the randomizer completely. 
+      // They get the exact same questions in the exact same static database entry order every single session run.
+    }
 
-    // Enforce an absolute hard boundary cap array length to match user request selection
+    // Enforce hard boundary cap array length matching configuration selection limits
     if (masterPool.length > limit) {
       masterPool = masterPool.slice(0, limit);
     }
