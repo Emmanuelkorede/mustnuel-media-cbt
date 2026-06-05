@@ -228,13 +228,13 @@ function HeadlinesWidget({ items, loading, onHeadlineClick }) {
               <div className={`absolute left-0 top-0 bottom-0 w-1 ${noti.is_pinned ? "bg-amber-500" : "bg-primary"}`} />
               
               <div className="pl-1.5 flex flex-col gap-0.5 min-w-0 flex-1">
-                <h4 
-                  className="text-xs font-bold text-text-primary truncate tracking-tight"
+                <h1
+                  className="text-xl font-bold text-text-primary truncate tracking-tight"
                   style={{ fontFamily: 'var(--font-body)' }}
                 >
                   {noti.is_pinned && <span className="text-amber-500 mr-1">📌</span>}
                   {noti.title}
-                </h4>
+                </h1>
                 <span className="text-[9px] font-mono font-medium text-text-muted">
                   {simpleTimeAgo(noti.created_at)}
                 </span>
