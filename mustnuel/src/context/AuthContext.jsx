@@ -50,7 +50,7 @@ export function AuthProvider({ children }) {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     let mounted = true;
-    let isBootstrapping = true; // Traffic light to prevent network collisions
+    let isBootstrapping = true; 
 
     const bootstrap = async () => {
       try {
@@ -60,7 +60,6 @@ export function AuthProvider({ children }) {
         setSession(existing);
         setUser(existing?.user ?? null);
 
-        // Bootstrap handles the initial data fetch exclusively
         if (existing?.user) {
           await fetchProfileById(existing.user.id);
         } else {
@@ -71,7 +70,7 @@ export function AuthProvider({ children }) {
       } finally {
         if (mounted) {
           setIsLoading(false);
-          isBootstrapping = false; // Green light for the listener to take over
+          isBootstrapping = false; 
         }
       }
     };
@@ -83,14 +82,10 @@ export function AuthProvider({ children }) {
         if (!mounted) return;
         if (event === 'INITIAL_SESSION') return;
 
-        // Always keep base auth state perfectly synced
         setSession(newSession);
         setUser(newSession?.user ?? null);
         setAuthError(null);
 
-        // THE CRITICAL FIX: 
-        // Only allow the listener to fetch data if the initial boot is finished.
-        // This stops the app from choking on concurrent fetch requests during a refresh.
         if (!isBootstrapping) {
           if (
             event === 'SIGNED_IN'       ||
@@ -137,7 +132,7 @@ export function AuthProvider({ children }) {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { 
-        redirectTo: `${window.location.origin}/auth`, // Redirect straight back to your auth engine route
+        redirectTo: `${window.location.origin}/auth`, 
         queryParams: {
           access_type: 'offline',
           prompt: 'consent'
@@ -165,8 +160,14 @@ export function AuthProvider({ children }) {
     return { success: true, data };
   }, [user]);
 
-  const isActivated = Boolean(profile?.is_premium);
-  const isAdmin     = profile?.role === 'admin';
+  // ⚡ DYNAMIC EXPIRATION LOGIC ENGINE 
+  // True only if premium tier parameter is active AND (has no cutoff deadline OR expiry timestamp resides in the future)
+  const isActivated = Boolean(
+    profile?.is_premium && 
+    (!profile.premium_expires_at || new Date(profile.premium_expires_at) > new Date())
+  );
+
+  const isAdmin = profile?.role === 'admin';
 
   const isProfileComplete = Boolean(
     profile?.display_name?.trim() &&

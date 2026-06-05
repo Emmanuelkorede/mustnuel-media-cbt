@@ -4,13 +4,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { supabase } from '../lib/supabaseClient';
-import { useAuth } from '../context/AuthContext'; // Confirmed context channel
+import { useAuth } from '../context/AuthContext'; 
 import { FiChevronLeft, FiCheck, FiCopy, FiUploadCloud, FiAlertCircle, FiAward } from 'react-icons/fi';
 
 export default function PremiumPage() {
-  // Pulling profile rows and isActivated directly from your AuthContext structure
   const { user, isActivated } = useAuth(); 
   const navigate = useNavigate();
+  
+  // Segmented control toggle hook state ('lifetime' or 'monthly')
+  const [activeTab, setActiveTab] = useState('lifetime');
   
   const [file, setFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -19,18 +21,30 @@ export default function PremiumPage() {
   const [existingSubmission, setExistingSubmission] = useState(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
-  // Core App Configuration
+  // Core App Configuration Specs
   const BANK_ACCOUNT = '9138770110'; 
   const BANK_NAME = 'opay'; 
   const ACCOUNT_NAME = 'Mustapha Hakeem olasunkanmi';
-  const PREMIUM_PRICE = '₦5,000';
+
+  // Dynamic values dictionary mapped to chosen billing profile configs
+  const tierDetails = {
+    lifetime: {
+      price: '₦5,000',
+      tag: 'Lifetime Access',
+      subtext: 'No hidden renewals',
+    },
+    monthly: {
+      price: '₦2,000',
+      tag: '30-Day Pass',
+      subtext: 'Verification renewal required',
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return;
     
     async function checkSubmissionStatus() {
       try {
-        // FIXED: Checks the real-time context activation status rather than the auth metadata layer
         if (isActivated) {
           setIsCheckingStatus(false);
           return;
@@ -45,6 +59,10 @@ export default function PremiumPage() {
         if (error) throw error;
         if (data) {
           setExistingSubmission(data);
+          // Auto sync view layer with whatever plan they submitted to resolve confusion
+          if (data.plan_type) {
+            setActiveTab(data.plan_type);
+          }
         }
       } catch (err) {
         console.error('[PremiumPage] Status sync error:', err.message);
@@ -98,13 +116,15 @@ export default function PremiumPage() {
         .from('receipts')
         .getPublicUrl(filePath);
 
+      // Injects publicUrl alongside the custom interactive selected tab value 
       const { data: newSubmission, error: dbError } = await supabase
         .from('premium_submissions')
         .insert([
           {
             user_id: user.id,
             receipt_url: publicUrl,
-            status: 'pending'
+            status: 'pending',
+            plan_type: activeTab // 👈 Dynamic parameter update logged safely
           }
         ])
         .select()
@@ -167,6 +187,37 @@ export default function PremiumPage() {
           </p>
         </div>
 
+        {/* 🎛️ NEW: SEGMENTED SWITCHER TAB COMPONENT OVERLAY */}
+        {!isActivated && !existingSubmission && (
+          <div 
+            className="p-1 rounded-2xl flex border items-center w-full"
+            style={{ backgroundColor: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}
+          >
+            <button
+              onClick={() => setActiveTab('lifetime')}
+              className={`flex-1 text-center py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                activeTab === 'lifetime' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+              }`}
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Lifetime
+            </button>
+            <button
+              onClick={() => setActiveTab('monthly')}
+              className={`flex-1 text-center py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all cursor-pointer ${
+                activeTab === 'monthly' 
+                  ? 'bg-blue-500 text-white shadow-sm' 
+                  : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]'
+              }`}
+              style={{ fontFamily: 'var(--font-display)' }}
+            >
+              Monthly (30d)
+            </button>
+          </div>
+        )}
+
         {/* Premium Value Proposition Card */}
         <section 
           className="rounded-3xl p-6 border transition-all duration-300"
@@ -178,17 +229,17 @@ export default function PremiumPage() {
         >
           <div className="flex justify-between items-center mb-5">
             <span 
-              className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md border"
+              className="text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-md border transition-all"
               style={{ backgroundColor: 'var(--color-primary-subtle)', borderColor: 'var(--color-primary)', color: 'var(--color-primary)' }}
             >
-              Lifetime Access
+              {tierDetails[activeTab].tag}
             </span>
             <div className="flex flex-col items-end">
-              <span className="text-2xl font-black font-mono tracking-tight" style={{ color: 'var(--color-text-primary)' }}>
-                {PREMIUM_PRICE}
+              <span className="text-2xl font-black font-mono tracking-tight transition-all" style={{ color: 'var(--color-text-primary)' }}>
+                {tierDetails[activeTab].price}
               </span>
-              <span className="text-[9px] uppercase tracking-wider font-bold mt-0.5" style={{ color: 'var(--color-text-muted)' }}>
-                No hidden renewals
+              <span className="text-[9px] uppercase tracking-wider font-bold mt-0.5 text-right transition-all" style={{ color: 'var(--color-text-muted)' }}>
+                {tierDetails[activeTab].subtext}
               </span>
             </div>
           </div>
@@ -220,7 +271,6 @@ export default function PremiumPage() {
             Connecting to system ledger...
           </div>
         ) : isActivated ? (
-          /* State 1: FIXED to verify based on profiles database sync table values via isActivated flag */
           <section 
             className="rounded-3xl p-6 border text-center flex flex-col items-center gap-4 transition-all duration-300"
             style={{ 
@@ -237,12 +287,11 @@ export default function PremiumPage() {
                 Premium Account Activated
               </h3>
               <p className="text-xs mt-1.5 leading-relaxed" style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
-                Your membership is fully verified and updated. All constraints on mocks, question pools, and platform mechanics are lifted permanently.
+                Your membership is fully verified and updated. All constraints on mocks, question pools, and platform mechanics are lifted safely.
               </p>
             </div>
           </section>
         ) : existingSubmission ? (
-          /* State 2: User has uploaded a file but profile isn't active yet */
           <section 
             className="rounded-3xl p-6 border text-center flex flex-col items-center gap-4 transition-all duration-300"
             style={{ 
@@ -259,7 +308,7 @@ export default function PremiumPage() {
                 Verification In Queue
               </h3>
               <p className="text-xs mt-2 leading-relaxed" style={{ fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
-                Your receipt screenshot has been safely logged. System administrators are verifying your transfer now. Access usually switches live within 1 to 12 hours.
+                Your receipt screenshot has been safely logged for the <strong className="uppercase text-[var(--color-primary)]">{existingSubmission.plan_type || activeTab} Plan</strong>. System administrators are verifying your transfer now. Access usually switches live within 1 to 12 hours.
               </p>
             </div>
             <div 
@@ -270,57 +319,55 @@ export default function PremiumPage() {
             </div>
           </section>
         ) : (
-          /* State 3: Interactive Two-Step Upload Form */
           <>
-{/* Step 1 Account Specifications */}
-<div className="flex flex-col gap-2">
-  <label 
-    className="text-[11px] font-bold tracking-widest uppercase ml-1"
-    style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}
-  >
-    Step 1 — Make Bank Transfer
-  </label>
+            {/* Step 1 Account Specifications */}
+            <div className="flex flex-col gap-2">
+              <label 
+                className="text-[11px] font-bold tracking-widest uppercase ml-1"
+                style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-text-muted)' }}
+              >
+                Step 1 — Make Bank Transfer ({tierDetails[activeTab].price})
+              </label>
 
-  <div 
-    className="rounded-3xl p-5 border flex flex-col gap-4 shadow-sm"
-    style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
-  >
-    <div 
-      className="flex justify-between items-center p-3.5 rounded-2xl border"
-      style={{ backgroundColor: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}
-    >
-      <div>
-        <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Account Number</span>
-        <p className="text-xl font-bold font-mono tracking-wide mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{BANK_ACCOUNT}</p>
-      </div>
-      <button
-        onClick={handleCopyAccount}
-        className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer active:scale-95 flex items-center gap-1.5"
-        style={{
-          backgroundColor: isCopied ? 'var(--color-primary)' : 'var(--color-canvas)',
-          borderColor: 'var(--color-border)',
-          color: isCopied ? '#ffffff' : 'var(--color-text-primary)'
-        }}
-      >
-        <span>{isCopied ? 'Copied' : 'Copy'}</span>
-      </button>
-    </div>
+              <div 
+                className="rounded-3xl p-5 border flex flex-col gap-4 shadow-sm"
+                style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}
+              >
+                <div 
+                  className="flex justify-between items-center p-3.5 rounded-2xl border"
+                  style={{ backgroundColor: 'var(--color-surface-2)', borderColor: 'var(--color-border)' }}
+                >
+                  <div>
+                    <span className="text-[9px] font-bold tracking-widest uppercase" style={{ color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>Account Number</span>
+                    <p className="text-xl font-bold font-mono tracking-wide mt-0.5" style={{ color: 'var(--color-text-primary)' }}>{BANK_ACCOUNT}</p>
+                  </div>
+                  <button
+                    onClick={handleCopyAccount}
+                    className="px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 border cursor-pointer active:scale-95 flex items-center gap-1.5"
+                    style={{
+                      backgroundColor: isCopied ? 'var(--color-primary)' : 'var(--color-canvas)',
+                      borderColor: 'var(--color-border)',
+                      color: isCopied ? '#ffffff' : 'var(--color-text-primary)'
+                    }}
+                  >
+                    <span>{isCopied ? 'Copied' : 'Copy'}</span>
+                  </button>
+                </div>
 
-    <div className="grid grid-cols-2 gap-4 text-xs px-1" style={{ fontFamily: 'var(--font-body)' }}>
-      <div>
-        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Bank Provider</span>
-        <p className="font-bold mt-0.5 text-md" style={{ color: 'var(--color-text-primary)' }}>{BANK_NAME}</p>
-      </div>
-      <div>
-        <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Beneficiary Name</span>
-        {/* FIXED: Removed 'truncate' and added 'break-words leading-tight' so the name wraps cleanly onto two lines if needed */}
-        <p className="font-bold mt-0.5 text-md break-words leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-          {ACCOUNT_NAME}
-        </p>
-      </div>
-    </div>
-  </div>
-</div>
+                <div className="grid grid-cols-2 gap-4 text-xs px-1" style={{ fontFamily: 'var(--font-body)' }}>
+                  <div>
+                    <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Bank Provider</span>
+                    <p className="font-bold mt-0.5 text-md" style={{ color: 'var(--color-text-primary)' }}>{BANK_NAME}</p>
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold tracking-wider uppercase" style={{ color: 'var(--color-text-muted)' }}>Beneficiary Name</span>
+                    <p className="font-bold mt-0.5 text-md break-words leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+                      {ACCOUNT_NAME}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             {/* Step 2 File Submission Gate */}
             <div className="flex flex-col gap-2">
@@ -368,7 +415,7 @@ export default function PremiumPage() {
                   onMouseEnter={e => (!isUploading && file) && (e.target.style.backgroundColor = 'var(--color-primary-hover)')}
                   onMouseLeave={e => (!isUploading && file) && (e.target.style.backgroundColor = 'var(--color-primary)')}
                 >
-                  {isUploading ? 'Registering Assets…' : 'Submit for Verification'}
+                  {isUploading ? 'Registering Assets…' : `Submit for ${activeTab} Verification`}
                 </button>
               </form>
 

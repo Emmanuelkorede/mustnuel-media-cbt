@@ -1,10 +1,22 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { FiBell, FiChevronRight, FiBookOpen, FiClock } from 'react-icons/fi';
 import ActivationBanner from '../components/widgets/ActivationBanner';
 import MetricsGrid from '../components/widgets/MetricsGrid';
 import { useProfile } from '../hooks/useProfile';
-import { useApp } from '../context/AppContext'; // 👈 Import the global application context hook
+import { useApp } from '../context/AppContext'; 
+import { supabase } from '../lib/supabaseClient'; // 👈 Imported Supabase client
 import AppTabs from '../components/navigation/AppTabs';
+
+// Lightweight time calculation helper for clean scannability
+function simpleTimeAgo(isoString) {
+  if (!isoString) return "";
+  const diff = Math.floor((Date.now() - new Date(isoString)) / 1000);
+  if (diff < 60)         return "Just now";
+  if (diff < 3600)       return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400)      return `${Math.floor(diff / 3600)}h ago`;
+  return new Date(isoString).toLocaleDateString("en-NG", { day: "numeric", month: "short" });
+}
 
 function timeGreeting() {
   const h = new Date().getHours();
@@ -49,7 +61,7 @@ function TopBar({ displayName, onNotificationPress, hasUnread }) {
             className="text-base font-black leading-none truncate"
             style={{
               fontFamily: 'var(--font-body)',
-              color:      'var(--color-text-primary)',
+              color: 'var(--color-text-primary)',
               letterSpacing: '-0.01em',
             }}
           >
@@ -91,8 +103,8 @@ function QuickActions({ onStudy, onExam }) {
       <p
         className="text-xs font-semibold uppercase"
         style={{
-          fontFamily:    'var(--font-body)',
-          color:         'var(--color-text-muted)',
+          fontFamily: 'var(--font-body)',
+          color: 'var(--color-text-muted)',
           letterSpacing: '0.1em',
         }}
       >
@@ -174,9 +186,72 @@ function QuickActions({ onStudy, onExam }) {
   );
 }
 
+// 📢 MINIMAL HEADLINES COMPONENT
+function HeadlinesWidget({ items, loading, onHeadlineClick }) {
+  return (
+    <div className="px-5 flex flex-col gap-2.5 w-full">
+      <p
+        className="text-xs font-semibold uppercase"
+        style={{
+          fontFamily: 'var(--font-body)',
+          color: 'var(--color-text-muted)',
+          letterSpacing: '0.1em',
+        }}
+      >
+        Latest Announcements
+      </p>
+
+      <div 
+        className="rounded-2xl border flex flex-col overflow-hidden divide-y"
+        style={{ 
+          backgroundColor: 'var(--color-surface)', 
+          borderColor: 'var(--color-border)',
+          disabledColor: 'var(--color-border)' 
+        }}
+      >
+        {loading ? (
+          [1, 2, 3].map((i) => (
+            <div key={i} className="h-12 bg-surface animate-pulse w-full" />
+          ))
+        ) : items.length === 0 ? (
+          <p className="text-[11px] text-text-muted p-4 text-center italic" style={{ fontFamily: 'var(--font-body)' }}>
+            No updates log active at the moment.
+          </p>
+        ) : (
+          items.map((noti) => (
+            <button
+              key={noti.id}
+              onClick={() => onHeadlineClick(noti.id)}
+              className="w-full text-left p-3.5 flex items-center justify-between gap-4 relative overflow-hidden transition active:bg-border/20 cursor-pointer"
+            >
+              {/* Vibe matching priority system indicator bar */}
+              <div className={`absolute left-0 top-0 bottom-0 w-1 ${noti.is_pinned ? "bg-amber-500" : "bg-primary"}`} />
+              
+              <div className="pl-1.5 flex flex-col gap-0.5 min-w-0 flex-1">
+                <h4 
+                  className="text-xs font-bold text-text-primary truncate tracking-tight"
+                  style={{ fontFamily: 'var(--font-body)' }}
+                >
+                  {noti.is_pinned && <span className="text-amber-500 mr-1">📌</span>}
+                  {noti.title}
+                </h4>
+                <span className="text-[9px] font-mono font-medium text-text-muted">
+                  {simpleTimeAgo(noti.created_at)}
+                </span>
+              </div>
+
+              <FiChevronRight size={14} className="text-text-muted shrink-0" />
+            </button>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const navigate = useNavigate();
-  const { setIsUpgradeModalOpen } = useApp(); // 👈 Destructure modal state controller
+  const { setIsUpgradeModalOpen } = useApp(); 
   
   const {
     displayName,
@@ -187,6 +262,32 @@ export default function HomePage() {
     averageScore,
   } = useProfile();
 
+  // News engine state tracking
+  const [headlines, setHeadlines] = useState([]);
+  const [loadingHeadlines, setLoadingHeadlines] = useState(true);
+
+  // Sync last 5 entries on initialization matching NotificationPage orders
+  useEffect(() => {
+    async function loadHeadlines() {
+      try {
+        const { data, error } = await supabase
+          .from("notifications")
+          .select("id, title, created_at, is_pinned")
+          .order("is_pinned", { ascending: false })
+          .order("created_at", { ascending: false })
+          .limit(5); // Strict limit cap to avoid cluttering HomePage space
+
+        if (error) throw error;
+        setHeadlines(data || []);
+      } catch (err) {
+        console.error("Home ticker sync breakdown:", err.message);
+      } finally {
+        setLoadingHeadlines(false);
+      }
+    }
+    loadHeadlines();
+  }, []);
+
   return (
     <div
       className="fixed inset-0 flex flex-col"
@@ -194,7 +295,7 @@ export default function HomePage() {
     >
       <TopBar
         displayName={displayName}
-        hasUnread={false}
+        hasUnread={headlines.some(h => h.is_pinned)} // Soft dot lighting rule trigger
         onNotificationPress={() => navigate('/notifications')}
       />
 
@@ -210,10 +311,8 @@ export default function HomePage() {
         <QuickActions
           onStudy={() => {
             if (!isActivated) {
-              // Intercept unactivated users and flash the modal!
               setIsUpgradeModalOpen(true);
             } else {
-              // Authenticated/Paid user allowed through safely
               navigate('/practice', { state: { mode: 'study' } });
             }
           }}
@@ -224,6 +323,13 @@ export default function HomePage() {
           streakCount={streakCount}
           cbtCount={cbtCount}
           averageScore={averageScore}
+        />
+
+        {/* Headlines Section injected cleanly */}
+        <HeadlinesWidget 
+          items={headlines}
+          loading={loadingHeadlines}
+          onHeadlineClick={(id) => navigate(`/notifications/${id}`)}
         />
       </div>
 

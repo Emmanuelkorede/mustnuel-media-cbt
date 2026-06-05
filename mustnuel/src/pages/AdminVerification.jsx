@@ -16,8 +16,6 @@ export default function AdminVerification() {
   const fetchSubmissions = async () => {
     setIsLoading(true);
     try {
-      
-      
       let query = supabase
         .from('premium_submissions')
         .select(`
@@ -27,6 +25,7 @@ export default function AdminVerification() {
           submitted_at,
           reviewed_at,
           user_id,
+          plan_type,
           profiles:user_id (
             display_name,
             email,
@@ -137,11 +136,23 @@ export default function AdminVerification() {
                       {ticket.profiles?.display_name || 'Incomplete Account'}
                     </h3>
                     <p className="text-[11px] text-text-muted font-mono truncate">{ticket.profiles?.email}</p>
-                    {ticket.profiles?.target_school && (
-                      <span className="inline-block text-[10px] bg-canvas text-text-secondary px-2 py-0.5 rounded-md font-medium border border-border mt-1">
-                        {ticket.profiles.target_school}
+                    
+                    <div className="flex flex-wrap gap-1 items-center mt-1">
+                      {ticket.profiles?.target_school && (
+                        <span className="inline-block text-[10px] bg-canvas text-text-secondary px-2 py-0.5 rounded-md font-medium border border-border">
+                          {ticket.profiles.target_school}
+                        </span>
+                      )}
+
+                      {/* 💎 ADDED: Standard HTML badge using your native app colors to flag billing type safely */}
+                      <span className={`inline-block text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-wider border ${
+                        ticket.plan_type === 'monthly'
+                          ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                          : 'bg-blue-500/10 text-blue-500 border-blue-500/20'
+                      }`}>
+                        {ticket.plan_type || 'lifetime'}
                       </span>
-                    )}
+                    </div>
                   </div>
 
                   <div className="flex flex-col items-end gap-1 shrink-0">
