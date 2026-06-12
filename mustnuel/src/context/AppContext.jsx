@@ -26,7 +26,7 @@ export const POST_UTME_SUBJECTS_BY_SCHOOL = {
   },
   OAU: {
     display_name: "Obafemi Awolowo University",
-    subjects: [ 'APTITUDE', 'MATHEMATICS', 'Physics', 'Chemistry', 'Biology', 'Government', 'Economics' ,'CRS' , 'IRS' , 'Yoruba' , 'Accounting' , 'Literature'],
+    subjects: [ 'APTITUDE', 'MATHEMATICS', 'PHYSICS', 'Chemistry', 'Biology', 'Government', 'Economics' ,'CRS' , 'IRS' , 'Yoruba' , 'Accounting' , 'Literature'],
     default_selection: ['MATHEMATICS', 'APTITUDE']
   }
 };
@@ -41,7 +41,7 @@ export const SUBJECTS_BY_TRACK = {
   Science: [
     'Mathematics',
     'English Language',
-    'Physics',
+    'PHYSICS',
     'Chemistry',
     'Biology',
   ],
