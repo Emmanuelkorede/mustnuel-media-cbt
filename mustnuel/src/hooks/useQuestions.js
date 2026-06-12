@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 
 /**
  * Fetches a pool of questions for a specific single subject.
- * Enforces rigid static ordering for free users.
+ * Enforces rigid static ordering for free users and case-insensitive string matching.
  */
 export async function fetchQuestionsForSubject({ school, subject, year, freeOnly, limit }) {
   try {
@@ -11,11 +11,11 @@ export async function fetchQuestionsForSubject({ school, subject, year, freeOnly
       .from('questions')
       .select('id, school, subject, year, question_text, option_a, option_b, option_c, option_d, correct_option, explanation, is_free');
 
-    // Filter by school safely
-    if (school) q = q.eq('school', school.toUpperCase().trim());
+    // ⚡ Case-Insensitive matching for School
+    if (school) q = q.ilike('school', school.trim());
     
-    // Filter by specific single subject
-    if (subject) q = q.eq('subject', subject);
+    // ⚡ Case-Insensitive matching for Subject (Matches "maths", "MATHS", etc.)
+    if (subject) q = q.ilike('subject', subject.trim());
 
     // Filter by year if chosen
     if (year) {

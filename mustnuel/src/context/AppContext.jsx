@@ -21,13 +21,13 @@ export const POST_UTME_SUBJECTS_BY_SCHOOL = {
   },
   UNILAG: {
     display_name: "University of Lagos",
-    subjects: ['English Language', 'Mathematics', 'General Paper'], // UNILAG combines track queries into a General Paper
+    subjects: ['English Language', 'Mathematics', 'General Paper'], 
     default_selection: ['English Language', 'Mathematics', 'General Paper']
   },
   OAU: {
     display_name: "Obafemi Awolowo University",
-    subjects: [ 'APTITUDE', 'MATHEMATICS', 'PHYSICS', 'Chemistry', 'Biology', 'Government', 'Economics' ,'CRS' , 'IRS' , 'Yoruba' , 'Accounting' , 'Literature'],
-    default_selection: ['MATHEMATICS', 'APTITUDE']
+    subjects: ['Aptitude', 'Mathematics', 'Physics', 'Chemistry', 'Biology', 'Government', 'Economics', 'CRS', 'IRS', 'Yoruba', 'Accounting', 'Literature'],
+    default_selection: ['Mathematics', 'Aptitude']
   }
 };
 
@@ -41,7 +41,7 @@ export const SUBJECTS_BY_TRACK = {
   Science: [
     'Mathematics',
     'English Language',
-    'PHYSICS',
+    'Physics',
     'Chemistry',
     'Biology',
   ],
@@ -137,9 +137,9 @@ export function AppProvider({ children }) {
   }, []);
 
   // =========================================================================
-  // 4. ACTIVE CBT SESSION STATE (Elevated globally to preserve data)
+  // 4. ACTIVE CBT SESSION STATE
   // =========================================================================
-  const [sessionStatus, setSessionStatus] = useState('idle'); // idle, loading, active, submitting, complete, error
+  const [sessionStatus, setSessionStatus] = useState('idle'); 
   const [activeQuestions, setActiveQuestions] = useState([]);
   const [userAnswers, setUserAnswers]         = useState({});
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -224,7 +224,7 @@ export function AppProvider({ children }) {
     TRACKS,
 
     isUpgradeModalOpen,
-setIsUpgradeModalOpen,
+    setIsUpgradeModalOpen,
   };
 
   return (
