@@ -22,9 +22,9 @@ export default function PremiumPage() {
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
 
   // Core App Configuration Specs
-  const BANK_ACCOUNT = '9138770110'; 
-  const BANK_NAME = 'opay'; 
-  const ACCOUNT_NAME = 'Mustapha Hakeem olasunkanmi';
+  const BANK_ACCOUNT = '9130333471'; 
+  const BANK_NAME = 'palmpay'; 
+  const ACCOUNT_NAME = 'Emmanuel Korede Job';
 
   // Dynamic values dictionary mapped to chosen billing profile configs
   const tierDetails = {
