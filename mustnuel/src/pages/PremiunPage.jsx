@@ -23,8 +23,8 @@ export default function PremiumPage() {
 
   // Core App Configuration Specs
   const BANK_ACCOUNT = '9130333471'; 
-  const BANK_NAME = 'palmpay'; 
-  const ACCOUNT_NAME = 'Emmanuel Korede Job';
+  const BANK_NAME = 'Opay'; 
+  const ACCOUNT_NAME = 'Blessing Titilayo Job';
 
   // Dynamic values dictionary mapped to chosen billing profile configs
   const tierDetails = {
