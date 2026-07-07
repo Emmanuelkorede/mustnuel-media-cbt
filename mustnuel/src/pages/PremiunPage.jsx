@@ -26,7 +26,6 @@ export default function PremiumPage() {
   const BANK_NAME = 'Opay'; 
   const ACCOUNT_NAME = 'Mustapha Hakeem';
 
-  // Dynamic values dictionary mapped to chosen billing profile configs
   const tierDetails = {
     lifetime: {
       price: '₦5,000',
@@ -59,7 +58,7 @@ export default function PremiumPage() {
         if (error) throw error;
         if (data) {
           setExistingSubmission(data);
-          // Auto sync view layer with whatever plan they submitted to resolve confusion
+          
           if (data.plan_type) {
             setActiveTab(data.plan_type);
           }
