@@ -21,7 +21,7 @@ const SCHOOL_METADATA = [
   { id: 'OAU', name: 'Obafemi Awolowo University', logoUrl: 'oau-logo.jpg' },
 ];
 
-const WHATSAPP_URL = "https://wa.me/2349122865246";
+const WHATSAPP_URL = "https://wa.me/2349025270206";
 
 export default function ProfilePage() {
   const navigate = useNavigate();
